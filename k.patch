@@ -1,0 +1,14 @@
+diff --git a/src/javasources/parsers/Concrete/syntax/KBuiltinsBasic.sdf b/src/javasources/parsers/Concrete/syntax/KBuiltinsBasic.sdf
+index 963e291..a530c02 100644
+--- a/src/javasources/parsers/Concrete/syntax/KBuiltinsBasic.sdf
++++ b/src/javasources/parsers/Concrete/syntax/KBuiltinsBasic.sdf
+@@ -20,6 +20,9 @@ lexical syntax
+ 	"\"" StringCharDz* "\"" -> DzDzSTRING
+ 	~[\"\n\r\\]			-> StringCharDz
+ 	[\\]~[\n\r]			-> StringCharDz
++	"'" StringChar2Dz* "'" -> DzDzSTRING
++	~[\'\n\r\\]			-> StringChar2Dz
++	[\\]~[\n\r]			-> StringChar2Dz
+ 
+ 	%% KLabel definition + restrictions lower
+ 	"'" KLabelCharDz+			-> KLabelDz
