@@ -94,8 +94,8 @@ module JS
                 | LExp "[" Exps "]"
                 | LExp "." Name
                 | "new" LExp "(" Exps ")" [prefer]
-                | "new" LExp
                 |       LExp "(" Exps ")"
+                > "new" LExp
 
   syntax Exp ::= LExp
                > Exp "++"
