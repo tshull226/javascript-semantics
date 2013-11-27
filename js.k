@@ -82,7 +82,7 @@ module JS
   syntax K ::= ve(Val,Bool,Bool) // ValEnv = Value * Mutable * Configurable
 
   // <activeStack>
-  syntax ListItem ::= active(Eid,Oid)
+  syntax ListItem ::= active(RunningCellFragment)
 
   //////////////////////////////////////////////////////////////////////////////
   // Initializing Configuration
@@ -365,7 +365,6 @@ module JS
   // 10.4.3 Entering Function Code
   syntax K ::= enterFunBody(Val,Oid,Vals) | endEnterFunBody(Val,Oid,Vals)
   // TODO: Consider Step 1,2,3
-  // TODO: Do first newDeclarativeEnvironment(E)
   rule <k> enterFunBody(F:Val,This:Oid,Args:Vals)
         => newDeclarativeEnvironment(E) ~> endEnterFunBody(F,This,Args) ... </k>
        <obj>
@@ -376,10 +375,10 @@ module JS
   rule <k> E:Eid ~> endEnterFunBody(F:Val,This:Oid,Args:Vals)
         => declBindingInst(Code,Args) ... </k>
        <ctx>
-         <activeStack> (. => active(E',This')) ... </activeStack>
+         <activeStack> (. => active(R)) ... </activeStack>
          <running>
-           <lexicalEnv> E':Eid => E </lexicalEnv>
-           <thisBinding> This':Oid => This </thisBinding>
+           (R => <lexicalEnv> E </lexicalEnv>
+                 <thisBinding> This </thisBinding>)
          </running>
        </ctx>
        <obj>
