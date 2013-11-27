@@ -41,18 +41,17 @@ module JS
         <objEnvRec multiplicity="?"> .K </objEnvRec> // Oid
       </env>
     </envs>
-    <ctxs>
-      // 10.3 Execution Contexts
-      <activeExecCtxStack> .List </activeExecCtxStack> // Cid* // Active Execution Contexts
-      <runningExecCtx> .K </runningExecCtx> // Cid // Running Execution Context
-      <cids> .Set </cids>
-      <ctx multiplicity="*">
-        <cid> .K </cid> // Cid
+    // 10.3 Execution Contexts
+    <ctx>
+      // Active Execution Contexts
+      <activeStack> .List </activeStack>
+      // Running Execution Context
+      <running>
         // Table 19 Execution Context State Components
         <lexicalEnv> .K </lexicalEnv> // Eid
         <thisBinding> .K </thisBinding> // Oid
-      </ctx>
-    </ctxs>
+      </running>
+    </ctx>
   </T>
 
   syntax Vals ::= List{Val, ","}
@@ -82,6 +81,9 @@ module JS
   // <declEnvRec>
   syntax K ::= ve(Val,Bool,Bool) // ValEnv = Value * Mutable * Configurable
 
+  // <activeStack>
+  syntax ListItem ::= active(Eid,Oid)
+
   //////////////////////////////////////////////////////////////////////////////
   // Initializing Configuration
   //////////////////////////////////////////////////////////////////////////////
@@ -110,20 +112,17 @@ module JS
                  <outer> nullEid </outer>
                </env>)
        </envs>
-       <ctxs>
+       <ctx>
          // 10.4.1 Entering Global Code
          // 10.4.1.1 Initial Global Execution Context
          // 10.5 Declaration Binding Instantiation
          // TODO: Declaration Binding Instantiation
-         <activeExecCtxStack> .List </activeExecCtxStack>
-         <runningExecCtx> . => globalCid </runningExecCtx>
-         <cids> . => SetItem(globalCid) </cids>
-         (. => <ctx>
-                 <cid> globalCid </cid>
-                 <lexicalEnv> globalEid </lexicalEnv>
-                 <thisBinding> globalOid </thisBinding>
-               </ctx>)
-       </ctxs>
+         <running>
+           <lexicalEnv> . => globalEid </lexicalEnv>
+           <thisBinding> . => globalOid </thisBinding>
+         </running>
+         <activeStack> . </activeStack>
+       </ctx>
 
   //////////////////////////////////////////////////////////////////////////////
   // 8.12 Algorithms for Object Internal Methods
@@ -364,28 +363,31 @@ module JS
   //////////////////////////////////////////////////////////////////////////////
 
   // 10.4.3 Entering Function Code
-  syntax K ::= enterFunBody(Val,Oid,Vals)
+  syntax K ::= enterFunBody(Val,Oid,Vals) | endEnterFunBody(Val,Oid,Vals)
   // TODO: Consider Step 1,2,3
   // TODO: Do first newDeclarativeEnvironment(E)
-  rule <k> enterFunBody(F:Val,This:Oid,Args:Vals) => declBindingInst(Code,Args) ... </k>
-       <ctxs>
-         <activeExecCtxStack> (. => ListItem(C)) ... </activeExecCtxStack>
-         <runningExecCtx> C:Cid => c(N) </runningExecCtx>
-         <cids> (. => SetItem(c(N))) ... </cids>
-         (. => <ctx>
-                 <cid> c(N) </cid>
-                 <lexicalEnv> newDeclarativeEnvironment(E) </lexicalEnv>
-                 <thisBinding> This </thisBinding>
-               </ctx>)
-         _
-       </ctxs>
+  rule <k> enterFunBody(F:Val,This:Oid,Args:Vals)
+        => newDeclarativeEnvironment(E) ~> endEnterFunBody(F,This,Args) ... </k>
        <obj>
          <oid> F </oid>
          <scope> E:Eid </scope>
+         _
+       </obj>
+  rule <k> E:Eid ~> endEnterFunBody(F:Val,This:Oid,Args:Vals)
+        => declBindingInst(Code,Args) ... </k>
+       <ctx>
+         <activeStack> (. => active(E',This')) ... </activeStack>
+         <running>
+           <lexicalEnv> E':Eid => E </lexicalEnv>
+           <thisBinding> This':Oid => This </thisBinding>
+         </running>
+       </ctx>
+       <obj>
+         <oid> F </oid>
          <code> Code:SourceElements </code>
          _
        </obj>
-       when fresh(N:Int)
+
 
   // 10.5 Declaration Binding Instantiation
   syntax K ::= declBindingInst(SourceElements,Vals)
@@ -397,20 +399,16 @@ module JS
   // 11.1.2 Identifier Reference
   // 10.3.1 Identifier Resolution
   rule <k> N:Name => getIdentifierReference(E,N) ... </k>
-       <runningExecCtx> C:Cid </runningExecCtx>
-       <ctx>
-         <cid> C </cid>
+       <running>
          <lexicalEnv> E:Eid </lexicalEnv>
          _
-       </ctx>
+       </running>
 
   // 11.1.1 The this Keyword
   rule <k> this => O ... </k>
-       <runningExecCtx> C:Cid </runningExecCtx>
-       <ctx>
-         <cid> C </cid>
+       <running>
          <thisBinding> O:Oid </thisBinding>
          _
-       </ctx>
+       </running>
 
 endmodule
