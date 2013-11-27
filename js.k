@@ -1,177 +1,58 @@
-module JS-SYNTAX
-  // Based on ECMA-262, 5.1 Edition, June 2011
-
-  // A.5 Programs
-  syntax Program ::= SourceElements
-
-  syntax SourceElements ::= List{SourceElement, ""}
-  syntax SourceElement ::= Stmt
-                         | FunExp
-
-  // A.5 Functions
-  syntax FunExp ::= "function" Name "(" Params ")" "{" FunBody "}"
-                  | "function"      "(" Params ")" "{" FunBody "}"
-  syntax Params ::= List{Name, ","}
-  syntax FunBody ::= SourceElements
-
-  // A.4 Statements
-  syntax Stmts ::= List{Stmt, ""}
-  syntax Stmt ::= Block
-                | "var" VarDeclS ";"
-                | ";"
-                | ExpS ";"
-                | "if" "(" ExpS ")" Stmt
-                | "if" "(" ExpS ")" Stmt "else" Stmt
-                | "do" Stmt "while" "(" ExpS ")" ";"
-                | "while" "(" ExpS ")" Stmt
-                | "for" "(" Exps  ";" Exps ";" Exps ")" Stmt
-                | "for" "(" "var" VarDeclS ";" Exps ";" Exps ")" Stmt
-                | "for" "(" LExp          "in" ExpS ")" Stmt
-                | "for" "(" "var" VarDecl "in" ExpS ")" Stmt
-                | "continue" ";"
-                | "continue" Name ";"
-                | "break" ";"
-                | "break" Name ";"
-                | "return" ";"
-                | "return" ExpS ";"
-                | "with" "(" ExpS ")" Stmt
-                | Name ":" Stmt  // label
-                | "switch" "(" ExpS ")" CaseBlock
-                | "throw" ExpS ";"
-                | "try" Block Catch
-                | "try" Block Finally
-                | "try" Block Catch Finally
-                | "debugger" ";"
-
-  syntax Block ::= "{" Stmts "}"
-
-  syntax VarDeclS ::= NeList{VarDecl, ","}
-  syntax VarDecl ::= Name
-                   | Name "=" Exp
-
-  syntax CaseBlock ::= "{" CaseClauses "}"
-                     | "{" CaseClauses DefaultClause CaseClauses "}"
-  syntax CaseClauses ::= List{CaseClause, ""}
-  syntax CaseClause ::= "case" ExpS ":" Stmts
-  syntax DefaultClause ::= "default" ":" Stmts
-
-  syntax Catch ::= "catch" "(" Name ")" Block
-  syntax Finally ::= "finally" Block
-
-  // A.3 Expressions
-  syntax ExpS ::= NeList{Exp, ","}
-  syntax Exps ::=   List{Exp, ","}
-
-  syntax AtomicExp ::= Name
-                     | Literal
-                     | "[" ArrayElements "]"
-                     | "{" PropertyAssignments "}"
-                     | "(" Exps ")" [bracket]
-
-  syntax Name ::= Token{[\_\$A-Za-z][\_\$A-Za-z0-9]*}   [notInRules]
-
-  syntax Literal ::= "this"
-                   | "null"
-                   | Bool
-                   | Int
-                   | Float
-                   | String
-
-  syntax ArrayElements ::= List{ExpOpt, ","}
-  syntax ExpOpt ::= Exp | "" [onlyLabel, klabel("'epsilonExp")]
-
-  syntax PropertyAssignments ::= List{PropertyAssignment, ","}
-  syntax PropertyAssignment ::= PropertyName ":" Exp
-                              | "get" PropertyName "("      ")" "{" FunBody "}"
-                              | "set" PropertyName "(" Name ")" "{" FunBody "}"
-  syntax PropertyName ::= Name
-                        | String
-                        | Int
-                        | Float
-
-  syntax LExp ::= AtomicExp
-                > FunExp
-                | LExp "[" Exps "]"
-                | LExp "." Name
-                | "new" LExp "(" Exps ")" [prefer,strict]
-                |       LExp "(" Exps ")" [strict]
-                > "new" LExp [strict]
-
-  syntax Exp ::= LExp
-               > Exp "++"
-               | Exp "--"
-               > "delete" Exp
-               | "void" Exp
-               | "typeof" Exp
-               | "++" Exp [prefer]
-               | "--" Exp [prefer]
-               | "+" Exp
-               | "-" Exp
-               | "~" Exp
-               | "!" Exp
-               > left:
-                 Exp "*" Exp [left]
-               | Exp "/" Exp [left]
-               | Exp "%" Exp [left]
-               > left:
-                 Exp "+" Exp [left]
-               | Exp "-" Exp [left]
-               > left:
-                 Exp "<<" Exp [left]
-               | Exp ">>" Exp [left]
-               | Exp ">>>" Exp [left]
-               > left:
-                 Exp "<" Exp [left]
-               | Exp ">" Exp [left]
-               | Exp "<=" Exp [left]
-               | Exp ">=" Exp [left]
-               | Exp "instanceof" Exp [left]
-               | Exp "in" Exp [left]
-               > left:
-                 Exp "==" Exp [left]
-               | Exp "!=" Exp [left]
-               | Exp "===" Exp [left]
-               | Exp "!==" Exp [left]
-               > left:
-                 Exp "&" Exp [left]
-               > left:
-                 Exp "^" Exp [left]
-               > left:
-                 Exp "|" Exp [left]
-               > left:
-                 Exp "&&" Exp [left]
-               > left:
-                 Exp "||" Exp [left]
-               > Exp "?" Exp ":" Exp
-               > right:
-                 LExp AssignOp Exp [right]
-
-  syntax AssignOp ::= "="
-                    | "*=" | "/=" | "%=" | "+=" | "-="
-                    | "<<=" | ">>=" | ">>>=" | "&=" | "^=" | "|="
-
-  rule new E:LExp => new E (.Exps) [macro]
-
-endmodule
+require "js-syntax.k"
 
 module JS
   imports JS-SYNTAX
 
   configuration <T>
-    <k> $PGM:Program </k>
-    <envStack> .List </envStack>
+    <k> initConfig ~> $PGM:Program </k>
     <objs>
-      <locs> .Set </locs> // 2^Loc
+      <oids> .Set </oids> // 2^Oid
+      // 8.6 The Object Type
       <obj multiplicity="*">
-        <loc> .K </loc> // Loc
+        <oid> .K </oid> // Oid
+        <properties> .Map </properties> // Var -> ValProp
+        // 8.6.2 Object Internal Properties and Methods
+        // Table 8 Internal Properties Common to All Objects
+        <prototype> .K </prototype> // Oid
         <class> .K </class> // String
         <extensible> .K </extensible> // Bool
-        <prototype> .K </prototype> // Loc
-        <properties> .Map </properties> // Var -> ValProp
+        // Table 9 Internal Properties Only Defined for Some Objects
+        <primitiveValue multiplicity="?"> .K </primitiveValue>
+        <scope multiplicity="?"> .K </scope> // Eid
+        <formalParameters multiplicity="?"> .K </formalParameters>
         <code multiplicity="?"> .K </code> // Fun
-        <scope multiplicity="?"> .List </scope> // <envStack>
+        <targetFunction multiplicity="?"> .K </targetFunction>
+        <boundThis multiplicity="?"> .K </boundThis>
+        <boundArguments multiplicity="?"> .K </boundArguments>
+        <parameterMap multiplicity="?"> .K </parameterMap>
       </obj>
     </objs>
+    <envs>
+      <eids> .Set </eids>
+      // 10.2 Lexical Environments
+      <env multiplicity="*">
+        <eid> .K </eid> // Eid
+        <outer> .K </outer> // Eid // Reference to an outer Lexical Environment
+        // 10.2.1 Environment Records
+        // NOTE: Should have either declarative or object environment record
+        // 10.2.1.1 Declarative Environment Records
+        <declEnvRec multiplicity="?"> .Map </declEnvRec> // Var -> Val
+        // 10.2.1.2 Object Environment Records
+        <objEnvRec multiplicity="?"> .K </objEnvRec> // Oid
+      </env>
+    </envs>
+    <ctxs>
+      // 10.3 Execution Contexts
+      <activeExecCtxStack> .List </activeExecCtxStack> // Cid* // Active Execution Contexts
+      <runningExecCtx> .K </runningExecCtx> // Cid // Running Execution Context
+      <cids> .Set </cids>
+      <ctx multiplicity="*">
+        <cid> .K </cid> // Cid
+        // Table 19 Execution Context State Components
+        <lexicalEnv> .K </lexicalEnv> // Eid
+        <thisBinding> .K </thisBinding> // Oid
+      </ctx>
+    </ctxs>
   </T>
 
   syntax Vals ::= List{Val, ","}
@@ -179,146 +60,357 @@ module JS
                | Bool
                | Int
                | String
-               | Loc
-  syntax Loc ::= l(Int)
-               | "nullLoc"
+               | Oid
+  syntax Oid ::= o(Int)
+               | "nullOid"
+               | "globalOid"
+  syntax Eid ::= e(Int)
+               | "nullEid"
+               | "globalEid" // 10.2.3 The Global Environment
+  syntax Cid ::= c(Int)
+               | "globalCid"
 
   // Subsorts information
   syntax LExp ::= Val
   syntax Exp ::= Val
-
-  // <envStack>
-  // 10.2.1.1 Declarative Environment Records
-  syntax ListItem ::= ed(Map) // Var -> ValEnv
-  syntax K ::= ve(Val,Bool,Bool) // ValEnv = Value * Mutable * Configurable
-  // 10.2.1.2 Object Environment Records
-  syntax ListItem ::= eo(Loc)
 
   // <properties>
   // 8.6.1 Property Attribute
   syntax K ::= vd(Val,Bool,Bool,Bool) // ValData = Value * Writable * Enumerable * Configurable
   syntax K ::= va(Val,Val,Bool,Bool) // ValAccessor = Get * Set * Enumerable * Configurable
 
+  // <declEnvRec>
+  syntax K ::= ve(Val,Bool,Bool) // ValEnv = Value * Mutable * Configurable
+
   //////////////////////////////////////////////////////////////////////////////
-  // Internal Methods
+  // Initializing Configuration
+  //////////////////////////////////////////////////////////////////////////////
+
+  syntax K ::= "initConfig"
+  // TODO: More initializations
+  rule <k> initConfig => . ... </k>
+       <objs>
+         <oids> . => SetItem(globalOid) </oids>
+         // 15 Standard Built-in ECMAScript Objects
+         // 15.1 The Global Object
+         (. => <obj>
+                 <oid> globalOid </oid>
+                 <properties> .Map  </properties> // TODO: It should be: String2Name("window") |-> globalOid
+                 <prototype> nullOid </prototype>
+                 <class> "Object" </class>
+                 <extensible> true </extensible>
+               </obj>)
+       </objs>
+       <envs>
+         <eids> . => SetItem(globalEid) </eids>
+         // 10.2.3 The Global Environment
+         (. => <env>
+                 <eid> globalEid </eid>
+                 <objEnvRec> globalOid </objEnvRec>
+                 <outer> nullEid </outer>
+               </env>)
+       </envs>
+       <ctxs>
+         // 10.4.1 Entering Global Code
+         // 10.4.1.1 Initial Global Execution Context
+         // 10.5 Declaration Binding Instantiation
+         // TODO: Declaration Binding Instantiation
+         <activeExecCtxStack> .List </activeExecCtxStack>
+         <runningExecCtx> . => globalCid </runningExecCtx>
+         <cids> . => SetItem(globalCid) </cids>
+         (. => <ctx>
+                 <cid> globalCid </cid>
+                 <lexicalEnv> globalEid </lexicalEnv>
+                 <thisBinding> globalOid </thisBinding>
+               </ctx>)
+       </ctxs>
+
+  //////////////////////////////////////////////////////////////////////////////
+  // 8.12 Algorithms for Object Internal Methods
   //////////////////////////////////////////////////////////////////////////////
 
   // 8.12.1 [[GetOwnProperty]] (P)
-  syntax K ::= getOwnProperty(Loc,Name)
-  rule <k> getOwnProperty(L:Loc,P:Name) => V ... </k>
+  syntax K ::= getOwnProperty(Oid,Name)
+  rule <k> getOwnProperty(O:Oid,P:Name) => V ... </k>
        <obj>
-         <loc> L </loc>
+         <oid> O </oid>
          <properties> ... P |-> V:K ... </properties>
          _
        </obj>
-  rule <k> getOwnProperty(L:Loc,P:Name) => undefined ... </k>
+  rule <k> getOwnProperty(O:Oid,P:Name) => undefined ... </k>
        <obj>
-         <loc> L </loc>
+         <oid> O </oid>
          <properties> Prop </properties>
          _
        </obj>
        when notBool(P in keys(Prop))
 
   // 8.12.2 [[getProperty]] (P)
-  syntax K ::= getProperty(Loc,Name) | endGetProperty(Loc,Name)
-  rule <k> getProperty(L:Loc,P:Name) => getOwnProperty(L,P) ~> endGetProperty(L,P) ... </k>
+  syntax K ::= getProperty(Oid,Name) | endGetProperty(Oid,Name)
+  rule <k> getProperty(O:Oid,P:Name) => getOwnProperty(O,P) ~> endGetProperty(O,P) ... </k>
   rule <k> V:Val ~> endGetProperty(_,_) => V ... </k>
        when V =/=K undefined
-  rule <k> undefined ~> endGetProperty(L:Loc,P:Name) => getProperty(L',P) ... </k>
+  rule <k> undefined ~> endGetProperty(O:Oid,P:Name) => getProperty(O',P) ... </k>
        <obj>
-         <loc> L </loc>
-         <prototype> L':Loc </prototype>
+         <oid> O </oid>
+         <prototype> O':Oid </prototype>
          _
        </obj>
-       when L' =/=K nullLoc
-  rule <k> undefined ~> endGetProperty(L:Loc,_) => undefined ... </k>
+       when O' =/=K nullOid
+  rule <k> undefined ~> endGetProperty(O:Oid,_) => undefined ... </k>
        <obj>
-         <loc> L </loc>
-         <prototype> nullLoc </prototype>
+         <oid> O </oid>
+         <prototype> nullOid </prototype>
          _
        </obj>
 
   // 8.12.3 [[Get]] (P)
-  syntax K ::= get(Loc,Name) | endGet(Loc,Name)
-  rule <k> get(L:Loc,P:Name) => getProperty(L,P) ~> endGet(L,P) ... </k>
+  syntax K ::= get(Oid,Name) | endGet(Oid,Name)
+  rule <k> get(O:Oid,P:Name) => getProperty(O,P) ~> endGet(O,P) ... </k>
   rule <k> vd(V:Val,_,_,_) ~> endGet(_,_) => V ... </k>
-  rule <k> va(Get:Val,_,_,_) ~> endGet(L,_) => call(Get,L,.Vals) ... </k>
+  rule <k> va(Get:Val,_,_,_) ~> endGet(O,_) => call(Get,O,.Vals) ... </k>
        when Get =/=K undefined
   rule <k> va(undefined,_,_,_) ~> endGet(_,_) => undefined ... </k>
   rule <k> undefined ~> endGet(_,_) => undefined ... </k>
 
   // 8.12.4 [[CanPut]] (P)
-  syntax K ::= canPut(Loc,Name) | endCanPut(Loc,Name)
-  rule <k> canPut(L:Loc,P:Name) => getOwnProperty(L,P) ~> endCanPut(L,P) ... </k>
+  syntax K ::= canPut(Oid,Name) | endCanPut(Oid,Name)
+  rule <k> canPut(O:Oid,P:Name) => getOwnProperty(O,P) ~> endCanPut(O,P) ... </k>
   rule <k> vd(_,Writable:Bool,_,_) ~> endCanPut(_,_) => Writable ... </k>
   rule <k> va(_,Set:Val,_,_) ~> endCanPut(_,_) => Set =/=K undefined ... </k>
-  rule <k> undefined ~> endCanPut(L:Loc,_) => Extensible ... </k>
+  rule <k> undefined ~> endCanPut(O:Oid,_) => Extensible ... </k>
        <obj>
-         <loc> L </loc>
-         <prototype> nullLoc </prototype>
+         <oid> O </oid>
+         <prototype> nullOid </prototype>
          <extensible> Extensible:Bool </extensible>
        </obj>
   //
-  rule <k> (. => getProperty(L,P)) ~> undefined ~> endCanPut(L:Loc,P:Name) ... </k>
+  rule <k> (. => getProperty(O,P)) ~> undefined ~> endCanPut(O:Oid,P:Name) ... </k>
        <obj>
-         <loc> L </loc>
-         <prototype> Prototype:Loc </prototype>
+         <oid> O </oid>
+         <prototype> Prototype:Oid </prototype>
        </obj>
-       when Prototype =/=K nullLoc
-  rule <k> vd(_,Writable:Bool,_,_) ~> undefined ~> endCanPut(L:Loc,_)
+       when Prototype =/=K nullOid
+  rule <k> vd(_,Writable:Bool,_,_) ~> undefined ~> endCanPut(O:Oid,_)
         => Extensible andBool Writable ... </k>
        <obj>
-         <loc> L </loc>
+         <oid> O </oid>
          <extensible> Extensible:Bool </extensible>
        </obj>
   rule <k> va(_,Set:Val,_,_) ~> undefined ~> endCanPut(_,_) => Set =/=K undefined ... </k>
-  rule <k> undefined ~> undefined ~> endCanPut(L:Loc,_) => Extensible ... </k>
+  rule <k> undefined ~> undefined ~> endCanPut(O:Oid,_) => Extensible ... </k>
        <obj>
-         <loc> L </loc>
+         <oid> O </oid>
          <extensible> Extensible:Bool </extensible>
        </obj>
 
   // 8.12.5 [[Put]] ( P, V, Throw )
   // TODO: Consider Throw
-  syntax K ::= put(Loc,Name,Val) | endPut(Loc,Name,Val)
-  rule <k> put(L:Loc,P:Name,V:Val) => canPut(L,P) ~> endPut(L,P,V) ... </k>
+  syntax K ::= put(Oid,Name,Val) | endPut(Oid,Name,Val)
+  rule <k> put(O:Oid,P:Name,V:Val) => canPut(O,P) ~> endPut(O,P,V) ... </k>
   // TODO: Consider Step 3
-  rule <k> (. => getProperty(L,P)) ~> true ~> endPut(L:Loc,P:Name,_) ... </k>
-  rule <k> vd(_,_,_,_) ~> true ~> endPut(L:Loc,P:Name,V:Val)
-        => defineOwnProperty(L,P,vd(V,true,true,true)) ... </k>
-  rule <k> va(_,Set:Val,_,_) ~> true ~> endPut(L:Loc,_,V:Val) => call(Set,L,V) ... </k>
+  rule <k> (. => getProperty(O,P)) ~> true ~> endPut(O:Oid,P:Name,_) ... </k>
+  rule <k> vd(_,_,_,_) ~> true ~> endPut(O:Oid,P:Name,V:Val)
+        => defineOwnProperty(O,P,vd(V,true,true,true)) ... </k>
+  rule <k> va(_,Set:Val,_,_) ~> true ~> endPut(O:Oid,_,V:Val) => call(Set,O,V) ... </k>
 
   // 8.12.6 [[HasProperty]] (P)
-  syntax K ::= hasProperty(Loc,Name) | endHasProperty(Loc,Name)
-  rule <k> hasProperty(L:Loc,P:Name) => getProperty(L,P) ~> endHasProperty(L,P) ... </k>
+  syntax K ::= hasProperty(Oid,Name) | endHasProperty(Oid,Name)
+  rule <k> hasProperty(O:Oid,P:Name) => getProperty(O,P) ~> endHasProperty(O,P) ... </k>
   rule <k> V:Val ~> endHasProperty(_,_) => V =/=K undefined ... </k>
 
   // 8.12.9 [[DefineOwnProperty]] (P, Desc, Throw)
-  syntax K ::= defineOwnProperty(Loc,Name,Val)
+  syntax K ::= defineOwnProperty(Oid,Name,Val)
+
+  //////////////////////////////////////////////////////////////////////////////
+  // 13.2 Creating Function Objects
+  //////////////////////////////////////////////////////////////////////////////
 
   // 11.2.3 Function Calls
   // 13.2.1 [[Call]]
-  syntax K ::= call(Val,Loc,Vals)
+  syntax K ::= call(Val,Oid,Vals)
 
   // 11.2.2 The new Operator
   // 13.2.2 [[Construct]]
-  rule <k> new F:Val (Vs:Vals) => call(F,l(L),Vs) ... </k>
+  rule <k> new F:Val (Vs:Vals) => call(F,o(N),Vs) ... </k>
        <objs>
-         <locs> (. => SetItem(l(L))) ... </locs>
+         <oids> (. => SetItem(o(N))) ... </oids>
          (. => <obj>
-                 <loc> l(L) </loc>
+                 <oid> o(N) </oid>
                  <class> "Object" </class>
                  <extensible> true </extensible>
                  <prototype> Prototype </prototype>
                  <properties> .Map </properties>
                </obj>)
          <obj>
-           <loc> F::Loc </loc>
-           <prototype> Prototype:Loc </prototype>
+           <oid> F::Oid </oid>
+           <prototype> Prototype:Oid </prototype>
            _
          </obj>
          _
        </objs>
-       when fresh(L:Int)
+       when fresh(N:Int)
+
+  //////////////////////////////////////////////////////////////////////////////
+  // 10.2.1 Environment Records
+  //////////////////////////////////////////////////////////////////////////////
+
+  syntax K ::= hasBinding(Eid,Name)
+  // 10.2.1.1.1 HasBinding(N)
+  rule <k> hasBinding(E:Eid,N:Name) => true ... </k>
+       <env>
+         <eid> E </eid>
+         <declEnvRec> ... N |-> _ ... </declEnvRec>
+         _
+       </env>
+  rule <k> hasBinding(E:Eid,N:Name) => false ... </k>
+       <env>
+         <eid> E </eid>
+         <declEnvRec> Record:Map </declEnvRec>
+         _
+       </env>
+       when notBool(N in keys(Record))
+  // 10.2.1.2.1 HasBinding(N)
+  rule <k> hasBinding(E:Eid,N:Name) => hasProperty(O,N) ... </k>
+       <env>
+         <eid> E </eid>
+         <objEnvRec> O:Oid </objEnvRec>
+         _
+       </env>
+
+  syntax K ::= getBindingValue(Eid,Name) | endGetBindingValue(Eid,Name)
+  // 10.2.1.1.4 GetBindingValue(N,S)
+  // TODO: Consider Step 3
+  rule <k> getBindingValue(E:Eid,N:Name) => V ... </k>
+       <env>
+         <eid> E </eid>
+         <declEnvRec> ... N |-> ve(V:Val,_,_) ... </declEnvRec>
+         _
+       </env>
+  // 10.2.1.2.4 GetBindingValue(N,S)
+  rule <k> getBindingValue(E:Eid,N:Name) => hasProperty(O,N) ~> endGetBindingValue(E,N) ... </k>
+       <env>
+         <eid> E </eid>
+         <objEnvRec> O:Oid </objEnvRec>
+         _
+       </env>
+  rule <k> true ~> endGetBindingValue(E:Eid,N:Name) => get(O,N) ... </k>
+       <env>
+         <eid> E </eid>
+         <objEnvRec> O:Oid </objEnvRec>
+         _
+       </env>
+  rule <k> false ~> endGetBindingValue(_,_) => undefined ... </k>
+
+  //////////////////////////////////////////////////////////////////////////////
+  // 10.2.2 Lexical Environment Operations
+  //////////////////////////////////////////////////////////////////////////////
+
+  // 10.2.2.1 GetIdentifierReference (lex, name, strict)
+  syntax K ::= getIdentifierReference(Eid,Name) | endGetIdentifierReference(Eid,Name)
+  syntax K ::= l(K,Name)
+  rule <k> getIdentifierReference(nullEid,N:Name) => l(undefined,N) ... </k>
+  rule <k> getIdentifierReference(E:Eid,N:Name)
+        => hasBinding(E,N) ~> endGetIdentifierReference(E,N) ... </k>
+       when E =/=K nullEid
+  rule <k> true ~> endGetIdentifierReference(E:Eid,N:Name) => l(E,N) ... </k>
+  rule <k> false ~> endGetIdentifierReference(E:Eid,N:Name)
+        => getIdentifierReference(E',N) ... </k>
+       <env>
+         <eid> E </eid>
+         <outer> E' </outer>
+         _
+       </env>
+
+  // 10.2.2.2 NewDeclarativeEnvironment (E)
+  syntax K ::= newDeclarativeEnvironment(Eid)
+  rule <k> newDeclarativeEnvironment(E:Eid) => . ... </k>
+       <envs>
+         <eids> (. => SetItem(e(N))) ... </eids>
+         (. => <env>
+                 <eid> e(N) </eid>
+                 <outer> E </outer>
+                 <declEnvRec> .Map </declEnvRec>
+               </env>)
+         _
+       </envs>
+       when fresh(N:Int)
+
+  // 10.2.2.3 NewObjectEnvironment (O, E)
+  syntax K ::= newObjectEnvironment(Oid,Eid)
+  rule <k> newObjectEnvironment(O:Oid,E:Eid) => . ... </k>
+       <envs>
+         <eids> (. => SetItem(e(N))) ... </eids>
+         (. => <env>
+                 <eid> e(N) </eid>
+                 <outer> E </outer>
+                 <objEnvRec> O </objEnvRec>
+               </env>)
+         _
+       </envs>
+       when fresh(N:Int)
+
+  //////////////////////////////////////////////////////////////////////////////
+  // 8.7 The Reference Specification Type
+  //////////////////////////////////////////////////////////////////////////////
+
+  // 8.7.1 GetValue (V)
+  syntax K ::= getValue(K)
+  rule <k> getValue(l(E:Eid,N:Name)) => getBindingValue(E,N) ... </k>
+  // TODO: other cases
+
+  //////////////////////////////////////////////////////////////////////////////
+  // 10.4 Establishing an Execution Context
+  //////////////////////////////////////////////////////////////////////////////
+
+  // 10.4.3 Entering Function Code
+  syntax K ::= enterFunBody(Val,Oid,Vals)
+  // TODO: Consider Step 1,2,3
+  // TODO: Do first newDeclarativeEnvironment(E)
+  rule <k> enterFunBody(F:Val,This:Oid,Args:Vals) => declBindingInst(Code,Args) ... </k>
+       <ctxs>
+         <activeExecCtxStack> (. => ListItem(C)) ... </activeExecCtxStack>
+         <runningExecCtx> C:Cid => c(N) </runningExecCtx>
+         <cids> (. => SetItem(c(N))) ... </cids>
+         (. => <ctx>
+                 <cid> c(N) </cid>
+                 <lexicalEnv> newDeclarativeEnvironment(E) </lexicalEnv>
+                 <thisBinding> This </thisBinding>
+               </ctx>)
+         _
+       </ctxs>
+       <obj>
+         <oid> F </oid>
+         <scope> E:Eid </scope>
+         <code> Code:SourceElements </code>
+         _
+       </obj>
+       when fresh(N:Int)
+
+  // 10.5 Declaration Binding Instantiation
+  syntax K ::= declBindingInst(SourceElements,Vals)
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Semantics
+  //////////////////////////////////////////////////////////////////////////////
+
+  // 11.1.2 Identifier Reference
+  // 10.3.1 Identifier Resolution
+  rule <k> N:Name => getIdentifierReference(E,N) ... </k>
+       <runningExecCtx> C:Cid </runningExecCtx>
+       <ctx>
+         <cid> C </cid>
+         <lexicalEnv> E:Eid </lexicalEnv>
+         _
+       </ctx>
+
+  // 11.1.1 The this Keyword
+  rule <k> this => O ... </k>
+       <runningExecCtx> C:Cid </runningExecCtx>
+       <ctx>
+         <cid> C </cid>
+         <thisBinding> O:Oid </thisBinding>
+         _
+       </ctx>
 
 endmodule
