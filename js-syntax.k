@@ -69,6 +69,10 @@ module JS-SYNTAX
                      | "(" Exps ")" [bracket]
 
   syntax Name ::= Token{[\_\$A-Za-z][\_\$A-Za-z0-9]*}   [notInRules]
+  syntax String ::= StringOfName(Name) [function]
+  rule StringOfName(N:Name) => #tokenToString(N)
+  syntax Name ::= NameOfString(String) [function]
+  rule NameOfString(S:String) => #parseToken("Name", S)
 
   syntax Literal ::= "this"
                    | "null"
