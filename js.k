@@ -77,17 +77,18 @@ module JS
   // Subsorts information
   syntax LExp ::= Val
   syntax Exp ::= Val
+  syntax KResult ::= Val
 
   // <properties>
   syntax PName ::= String
   syntax PName ::= PNameOfName(Name) [function]
   rule PNameOfName(N:Name) => #tokenToString(N)
   // 8.6.1 Property Attribute
-  syntax K ::= vd(Val,Bool,Bool,Bool) // ValData = Value * Writable * Enumerable * Configurable
-  syntax K ::= va(Val,Val,Bool,Bool) // ValAccessor = Get * Set * Enumerable * Configurable
+  syntax Val ::= vd(Val,Bool,Bool,Bool) // ValData = Value * Writable * Enumerable * Configurable
+  syntax Val ::= va(Val,Val,Bool,Bool) // ValAccessor = Get * Set * Enumerable * Configurable
 
   // <declEnvRec>
-  syntax K ::= ve(Val,Bool,Bool,Bool) // ValEnv = Value * Initialized * Mutable * Deletable
+  syntax Val ::= ve(Val,Bool,Bool,Bool) // ValEnv = Value * Initialized * Mutable * Deletable
 
   // <activeStack>
   syntax ListItem ::= active(RunningCellFragment)
@@ -160,8 +161,12 @@ module JS
   //////////////////////////////////////////////////////////////////////////////
 
   // 8.7.1 GetValue (V)
-  syntax K ::= getValue(K)
+  syntax K ::= getValue(K) | endGetValue(K)
   rule <k> getValue(l(E:Eid,N:Name)) => getBindingValue(E,N) ... </k>
+  //
+  rule <k> getValue(l(O:Oid,P:PName)) => getProperty(O,P) ~> endGetValue(l(O,P)) ... </k>
+  rule <k> undefined ~> endGetValue(_) => undefined ... </k>
+  rule <k> vd(V:Val,_,_,_) ~> endGetValue(_) => V ... </k>
   // TODO: other cases
 
   // 8.7.2 PutValue (V, W)
@@ -271,8 +276,18 @@ module JS
   // TODO:
 
   // 8.12.9 [[DefineOwnProperty]] (P, Desc, Throw)
-  syntax K ::= defineOwnProperty(Oid,PName,Val)
-  // TODO:
+  syntax K ::= defineOwnProperty(Oid,PName,Val) | endDefineOwnProperty(Oid,PName,Val)
+  rule <k> defineOwnProperty(O:Oid,P:PName,V:Val)
+        => getOwnProperty(O,P) ~> endDefineOwnProperty(O,P,V) ... </k>
+  rule <k> undefined ~> endDefineOwnProperty(O:Oid,P:PName,vd(V:Val,Wr:Bool,En:Bool,Co:Bool))
+        => . ... </k>
+       <obj>
+         <oid> O </oid>
+         <properties> (. => P |-> vd(V,Wr,En,Co)) ... </properties>
+         <extensible> true </extensible>
+         _
+       </obj>
+  // TODO: other cases
 
   //////////////////////////////////////////////////////////////////////////////
   // 9 Type Conversion and Testing
@@ -308,7 +323,8 @@ module JS
 
   // 9.8 ToString
   syntax K ::= toString(Val)
-  // TODO:
+  rule <k> toString(S:String) => S ... </k>
+  // TODO: other cases
 
   // 9.9 ToObject
   syntax K ::= toObject(Val)
@@ -316,7 +332,8 @@ module JS
 
   // 9.10 CheckObjectCoercible
   syntax K ::= checkObjectCoercible(Val)
-  // TODO:
+  rule <k> checkObjectCoercible(V:Val) => . ... </k>
+       when (V =/=K undefined) orBool (V =/=K nullVal)
 
   // 9.11 IsCallable
   syntax K ::= isCallable(Val)
@@ -508,7 +525,7 @@ module JS
 
   // 10.2.2.1 GetIdentifierReference (lex, name, strict)
   syntax K ::= getIdentifierReference(Eid,Name) | endGetIdentifierReference(Eid,Name)
-  syntax K ::= l(K,Name)
+  syntax K ::= l(K,K)
   rule <k> getIdentifierReference(nullEid,N:Name) => l(undefined,N) ... </k>
   rule <k> getIdentifierReference(E:Eid,N:Name)
         => hasBinding(E,N) ~> endGetIdentifierReference(E,N) ... </k>
@@ -618,22 +635,20 @@ module JS
   // TODO:
 
   // 11.1.5 Object Initialiser
-  rule <k> { PAs:PropertyAssignments } => newObject ~> assignProps(PAs) ... </k>
+  rule <k> { PAs:PropertyAssignments } => newObject ~> assignProps(HOLE,PAs) ... </k>
+  rule <k> O:Oid ~> assignProps(HOLE,PAs:PropertyAssignments) => assignProps(O,PAs) ... </k>
   //
-  syntax K ::= assignProps(PropertyAssignments)
-  rule <k> O:Oid ~> assignProps(.PropertyAssignments) => O ... </k>
-  rule <k> O:Oid ~> assignProps(PA:PropertyAssignment, PAs:PropertyAssignments)
-        => assignProp(PA) ~>
-           O:Oid ~> assignProps(PAs) ... </k>
+  syntax K ::= assignProps(Oid,PropertyAssignments)
+  rule <k> assignProps(O:Oid, .PropertyAssignments) => O ... </k>
+  rule <k> assignProps(O:Oid, (PA:PropertyAssignment, PAs:PropertyAssignments))
+        => assignProp(PA) ~> assignProps(O,PAs) ... </k>
   //
   syntax K ::= assignProp(PropertyAssignment)
-  rule <k> (. => toPName(P)) ~> assignProp(P:PropertyName : _) ~>
-           O:Oid ~> assignProps(_) ... </k>
-  rule <k> (. => E) ~> _:PName ~> assignProp(_ : E:Exp) ~>
-           O:Oid ~> assignProps(_) ... </k>
+  rule <k> (. => toPName(P)) ~> assignProp(P:PropertyName : _) ~> assignProps(_,_) ... </k>
+  rule <k> (. => E) ~> _:PName ~> assignProp(_ : E:Exp) ~> assignProps(_,_) ... </k>
   rule <k> (V:Val ~> P:PName ~> assignProp(_ : _)
-             => defineOwnProperty(O,P,vd(V,true,true,true))) ~>
-           O:Oid ~> assignProps(_) ... </k>
+            => defineOwnProperty(O,P,vd(V,true,true,true))
+           ) ~> assignProps(O:Oid,_) ... </k>
   // TODO: Consider get, set properties
   //
   syntax K /* PName */ ::= toPName(PropertyName)
@@ -650,7 +665,11 @@ module JS
   //////////////////////////////////////////////////////////////////////////////
 
   // 11.2.1 Property Accessors
-  // TODO:
+  rule <k> _:Val[(_:Val => .), Vs:Vals] ... </k>
+       when Vs =/=K .Vals
+  rule <k> O:Oid[N:Val]
+        => checkObjectCoercible(O) ~> toString(N) ~> getValue(l(O,HOLE)) ... </k>
+  rule <k> P:PName ~> getValue(l(O:Oid,HOLE)) => getValue(l(O,P)) ... </k>
 
   // 11.2.2 The new Operator
   // See 13.2 Creating Function Objects
@@ -756,5 +775,9 @@ module JS
   // 15.10 RegExp (RegularExpression) Objects
   // 15.11 ErrorObjects
   // 15.12 The JSON Object
+
+  // Temporary
+  rule <k> S:SourceElement Ss:SourceElements => S ~> Ss ... </k>
+  rule <k> V:Vals ~> S:SourceElements => S ... </k>
 
 endmodule

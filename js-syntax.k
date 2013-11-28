@@ -19,9 +19,9 @@ module JS-SYNTAX
   syntax Stmt ::= Block
                 | "var" VarDeclS ";"
                 | ";"
-                | ExpS ";"
-                | "if" "(" ExpS ")" Stmt
-                | "if" "(" ExpS ")" Stmt "else" Stmt
+                | ExpS ";"                              [strict(1)]
+                | "if" "(" ExpS ")" Stmt                [strict(1)]
+                | "if" "(" ExpS ")" Stmt "else" Stmt    [strict(1)]
                 | "do" Stmt "while" "(" ExpS ")" ";"
                 | "while" "(" ExpS ")" Stmt
                 | "for" "(" Exps  ";" Exps ";" Exps ")" Stmt
@@ -33,11 +33,11 @@ module JS-SYNTAX
                 | "break" ";"
                 | "break" Name ";"
                 | "return" ";"
-                | "return" ExpS ";"
-                | "with" "(" ExpS ")" Stmt
+                | "return" ExpS ";"                     [strict(1)]
+                | "with" "(" ExpS ")" Stmt              [strict(1)]
                 | Name ":" Stmt  // label
-                | "switch" "(" ExpS ")" CaseBlock
-                | "throw" ExpS ";"
+                | "switch" "(" ExpS ")" CaseBlock       [strict(1)]
+                | "throw" ExpS ";"                      [strict(1)]
                 | "try" Block Catch
                 | "try" Block Finally
                 | "try" Block Catch Finally
@@ -47,20 +47,20 @@ module JS-SYNTAX
 
   syntax VarDeclS ::= NeList{VarDecl, ","}
   syntax VarDecl ::= Name
-                   | Name "=" Exp
+                   | Name "=" Exp                       [strict(2)]
 
   syntax CaseBlock ::= "{" CaseClauses "}"
                      | "{" CaseClauses DefaultClause CaseClauses "}"
   syntax CaseClauses ::= List{CaseClause, ""}
-  syntax CaseClause ::= "case" ExpS ":" Stmts
+  syntax CaseClause ::= "case" ExpS ":" Stmts           [strict(1)]
   syntax DefaultClause ::= "default" ":" Stmts
 
   syntax Catch ::= "catch" "(" Name ")" Block
   syntax Finally ::= "finally" Block
 
   // A.3 Expressions
-  syntax ExpS ::= NeList{Exp, ","}
-  syntax Exps ::=   List{Exp, ","}
+  syntax ExpS ::= NeList{Exp, ","}                      [seqstrict]
+  syntax Exps ::=   List{Exp, ","}                      [seqstrict]
 
   syntax AtomicExp ::= Name
                      | Literal
@@ -85,7 +85,7 @@ module JS-SYNTAX
   syntax ExpOpt ::= Exp | "" [onlyLabel, klabel("'epsilonExp")]
 
   syntax PropertyAssignments ::= List{PropertyAssignment, ","}
-  syntax PropertyAssignment ::= PropertyName ":" Exp
+  syntax PropertyAssignment ::= PropertyName ":" Exp    [strict(2)]
                               | "get" PropertyName "("      ")" "{" FunBody "}"
                               | "set" PropertyName "(" Name ")" "{" FunBody "}"
   syntax PropertyName ::= Name
@@ -95,65 +95,72 @@ module JS-SYNTAX
 
   syntax LExp ::= AtomicExp
                 > FunExp
-                | LExp "[" Exps "]"
+                | LExp "[" Exps "]"                     [seqstrict]
                 | LExp "." Name
-                | "new" LExp "(" Exps ")" [prefer,strict]
-                |       LExp "(" Exps ")" [strict]
-                > "new" LExp [strict]
+                | "new" LExp "(" Exps ")"               [seqstrict,prefer]
+                |       LExp "(" Exps ")"               [seqstrict]
+                > "new" LExp                            [strict(1)]
 
   syntax Exp ::= LExp
-               > Exp "++"
-               | Exp "--"
-               > "delete" Exp
-               | "void" Exp
-               | "typeof" Exp
-               | "++" Exp [prefer]
-               | "--" Exp [prefer]
-               | "+" Exp
-               | "-" Exp
-               | "~" Exp
-               | "!" Exp
+               > Exp "++"                               [strict(1)]
+               | Exp "--"                               [strict(1)]
+               > "delete" Exp                           [strict(1)]
+               | "void" Exp                             [strict(1)]
+               | "typeof" Exp                           [strict(1)]
+               | "++" Exp                               [strict(1),prefer]
+               | "--" Exp                               [strict(1),prefer]
+               | "+" Exp                                [strict(1)]
+               | "-" Exp                                [strict(1)]
+               | "~" Exp                                [strict(1)]
+               | "!" Exp                                [strict(1)]
                > left:
-                 Exp "*" Exp [left]
-               | Exp "/" Exp [left]
-               | Exp "%" Exp [left]
+                 Exp "*" Exp                            [seqstrict,left]
+               | Exp "/" Exp                            [seqstrict,left]
+               | Exp "%" Exp                            [seqstrict,left]
                > left:
-                 Exp "+" Exp [left]
-               | Exp "-" Exp [left]
+                 Exp "+" Exp                            [seqstrict,left]
+               | Exp "-" Exp                            [seqstrict,left]
                > left:
-                 Exp "<<" Exp [left]
-               | Exp ">>" Exp [left]
-               | Exp ">>>" Exp [left]
+                 Exp "<<" Exp                           [seqstrict,left]
+               | Exp ">>" Exp                           [seqstrict,left]
+               | Exp ">>>" Exp                          [seqstrict,left]
                > left:
-                 Exp "<" Exp [left]
-               | Exp ">" Exp [left]
-               | Exp "<=" Exp [left]
-               | Exp ">=" Exp [left]
-               | Exp "instanceof" Exp [left]
-               | Exp "in" Exp [left]
+                 Exp "<" Exp                            [seqstrict,left]
+               | Exp ">" Exp                            [seqstrict,left]
+               | Exp "<=" Exp                           [seqstrict,left]
+               | Exp ">=" Exp                           [seqstrict,left]
+               | Exp "instanceof" Exp                   [seqstrict,left]
+               | Exp "in" Exp                           [seqstrict,left]
                > left:
-                 Exp "==" Exp [left]
-               | Exp "!=" Exp [left]
-               | Exp "===" Exp [left]
-               | Exp "!==" Exp [left]
+                 Exp "==" Exp                           [seqstrict,left]
+               | Exp "!=" Exp                           [seqstrict,left]
+               | Exp "===" Exp                          [seqstrict,left]
+               | Exp "!==" Exp                          [seqstrict,left]
                > left:
-                 Exp "&" Exp [left]
+                 Exp "&" Exp                            [seqstrict,left]
                > left:
-                 Exp "^" Exp [left]
+                 Exp "^" Exp                            [seqstrict,left]
                > left:
-                 Exp "|" Exp [left]
+                 Exp "|" Exp                            [seqstrict,left]
                > left:
-                 Exp "&&" Exp [left]
+                 Exp "&&" Exp                           [seqstrict,left]
                > left:
-                 Exp "||" Exp [left]
-               > Exp "?" Exp ":" Exp
+                 Exp "||" Exp                           [seqstrict,left]
+               > Exp "?" Exp ":" Exp                    [strict(1)]
                > right:
-                 LExp AssignOp Exp [right]
+                 LExp AssignOp Exp                      [seqstrict,right]
 
   syntax AssignOp ::= "="
                     | "*=" | "/=" | "%=" | "+=" | "-="
                     | "<<=" | ">>=" | ">>>=" | "&=" | "^=" | "|="
 
+  //////////////////////////////////////////////////////////////////////////////
+  // Desugaring syntactic sugars
+  //////////////////////////////////////////////////////////////////////////////
+
   rule new E:LExp => new E (.Exps) [macro]
+
+  // 11.2.1 Property Accessors
+  rule E:LExp . N:Name => E[StringOfName(N)] [macro]
 
 endmodule
