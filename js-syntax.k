@@ -42,6 +42,7 @@ module JS-SYNTAX
                 | "try" Block Finally
                 | "try" Block Catch Finally
                 | "debugger" ";"
+                | "print" "(" Exp ")" ";" [strict(1)]
 
   syntax Block ::= "{" Stmts "}"
 
@@ -95,10 +96,10 @@ module JS-SYNTAX
 
   syntax LExp ::= AtomicExp
                 > FunExp
-                | LExp "[" Exps "]"                     [seqstrict]
+                | LExp "[" Exps "]"                     [seqstrict,klabel("'lookupLExp")]
                 | LExp "." Name
                 | "new" LExp "(" Exps ")"               [seqstrict,prefer]
-                |       LExp "(" Exps ")"               [seqstrict]
+                |       LExp "(" Exps ")"               [seqstrict] // TODO: WRONG!! It should be: [strict(2)]
                 > "new" LExp                            [strict(1)]
 
   syntax Exp ::= LExp
@@ -143,16 +144,23 @@ module JS-SYNTAX
                > left:
                  Exp "|" Exp                            [seqstrict,left]
                > left:
-                 Exp "&&" Exp                           [seqstrict,left]
+                 Exp "&&" Exp                           [strict(1),left]
                > left:
-                 Exp "||" Exp                           [seqstrict,left]
+                 Exp "||" Exp                           [strict(1),left]
                > Exp "?" Exp ":" Exp                    [strict(1)]
                > right:
-                 LExp AssignOp Exp                      [seqstrict,right]
-
-  syntax AssignOp ::= "="
-                    | "*=" | "/=" | "%=" | "+=" | "-="
-                    | "<<=" | ">>=" | ">>>=" | "&=" | "^=" | "|="
+                 LExp "=" Exp                           [strict(2),right,klabel("'assignExp")]
+               | LExp "*=" Exp                          [strict(2),right]
+               | LExp "/=" Exp                          [strict(2),right]
+               | LExp "%=" Exp                          [strict(2),right]
+               | LExp "+=" Exp                          [strict(2),right]
+               | LExp "-=" Exp                          [strict(2),right]
+               | LExp "<<=" Exp                         [strict(2),right]
+               | LExp ">>=" Exp                         [strict(2),right]
+               | LExp ">>>=" Exp                        [strict(2),right]
+               | LExp "&=" Exp                          [strict(2),right]
+               | LExp "^=" Exp                          [strict(2),right]
+               | LExp "|=" Exp                          [strict(2),right]
 
   //////////////////////////////////////////////////////////////////////////////
   // Desugaring syntactic sugars
@@ -162,5 +170,8 @@ module JS-SYNTAX
 
   // 11.2.1 Property Accessors
   rule E:LExp . N:Name => E[StringOfName(N)] [macro]
+
+  syntax Exp ::= assignExp(LExp,Exp)
+  syntax LExp ::= lookupLExp(LExp,Exps)
 
 endmodule
