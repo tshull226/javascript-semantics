@@ -882,12 +882,13 @@ module JS
                </obj>)
          <obj>
            <oid> F::Oid </oid>
-           <prototype> Prototype:Oid </prototype>
+           <properties> ... "prototype" |-> vd(Prototype:Oid,true,false,false) ... </properties>
            _
          </obj>
          _
        </objs>
        when fresh(N:Int)
+  // TODO: other cases, step 7
 
   // 12.4 Expression Statement
   // TODO: This is a naive implementation
