@@ -366,7 +366,8 @@ module JS
   // 9.10 CheckObjectCoercible
   syntax K /* .K */ ::= checkObjectCoercible(Val)
   rule <k> checkObjectCoercible(V:Val) => . ... </k>
-       when (V =/=K undefined) orBool (V =/=K nullVal)
+       when (V =/=K undefined) orBool
+            (V =/=K nullVal)
 
   // 9.11 IsCallable
   syntax K /* Bool */ ::= isCallable(Val)
