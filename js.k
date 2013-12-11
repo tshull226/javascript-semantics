@@ -1,7 +1,9 @@
 require "js-syntax.k"
+require "builtins/mint.k"
 
 module JS
   imports JS-SYNTAX
+	imports MINT
 
   configuration <T>
     <k> initConfig ~> $PGM:Program </k>
@@ -47,7 +49,7 @@ module JS
     // 10.3 Execution Contexts
     <ctx>
       // Active Execution Contexts
-      <activeStack> .List </activeStack>
+      <activeStack> .List </activeStack> //Fragments of running Cell
       // Running Execution Context
       <running>
         // Table 19 Execution Context State Components
@@ -60,19 +62,33 @@ module JS
   </T>
 
   syntax Vals ::= List{Val, ","}
+	syntax Number ::= Int | Float | SpecialNumber 
+	syntax SpecialNumber ::=  "NaN"//  | "+0" | "-0" |  "Infinity"
+	//TODO: Differentiate between +0, -0
   syntax Val ::= "undefined"
                | "nullVal"
                | Bool
-               | Int
-               | Float
+               | Number
                | String
                | Oid
+
+	syntax Eid ::= e(Int)
   syntax Oid ::= o(Int)
                | "nullOid"
                | "globalOid"
                | "objectProtoOid"
                | "functionProtoOid"
-  syntax Eid ::= e(Int)
+               | "stringProtoOid" | "stringConstrOid" | "stringToStringOid" | "stringValueOfOid" | "stringCharAtOid" 
+							 | "stringCharCodeAtOid" | "stringConcatOid" | "stringIndexOfOid" | "stringLastIndexOfOid"
+							 | "stringLocaleCompareOid" | "stringMatchOid" | "stringReplaceOid" | "stringSearchOid" |"stringSliceOid"
+							 | "stringSplitOid" | "stringSubstringOid" | "stringToLowerCaseOid" | "stringToLocaleLowerCaseOid"
+							 | "stringToUpperCaseOid" | "stringToLocaleUpperCaseOid" | "stringTrimOid"
+               | "booleanProtoOid" | "booleanConstrOid" | "booleanToStringOid" | "booleanValueOfOid"
+               | "numberProtoOid" | "numberConstrOid" | "numberToStringOid" | "numberToLocaleStringOid" | "numberValueOfOid"
+							 | "numberToFixedOid" | "numberToExponentialOid" | "numberToPrecisionOid"
+               | "typeErrorOid"
+
+                 syntax Eid ::= e(Int)
                | "nullEid"
                | "globalEid" // 10.2.3 The Global Environment
   syntax Cid ::= c(Int)
@@ -105,7 +121,7 @@ module JS
   // TODO: More initializations
   rule <k> initConfig => . ... </k>
        <objs>
-         <oids> . => SetItem(globalOid) </oids>
+         <oids> . => SetItem(globalOid) </oids> 
          // 15 Standard Built-in ECMAScript Objects
          // 15.1 The Global Object
          (. => <obj>
@@ -123,10 +139,110 @@ module JS
                  <extensible> true </extensible>
                </obj>)
          (. => <obj>
+                 <oid> typeErrorOid </oid>
+                 <properties> "length" |-> vd(0, false, false, false) </properties>
+                 <prototype> functionProtoOid </prototype>
+                 <class> "Function" </class> 
+                 <extensible> false </extensible>
+								 <scope> globalEid </scope>
+								 <formalParameters> .K </formalParameters>
+								 <code> .K </code> //TODO: need code ot throw object 13.2.3
+               </obj>)
+         (. => <obj>
                  <oid> functionProtoOid </oid>
                  <properties> .Map  </properties>
                  <prototype> objectProtoOid </prototype>
                  <class> "Function" </class>
+                 <extensible> true </extensible>
+               </obj>)
+         (. => <obj>
+                 <oid> stringProtoOid </oid>
+                 <properties> 
+															"constructor" |-> vd(stringConstrOid, false, false, false)  
+															"toString" |-> vd(stringToStringOid, false, false, false) //need object
+															"valueOf" |-> vd(stringValueOfOid, false, false, false)  //need object
+															"charAt" |-> vd(stringCharAtOid, false, false, false)  //need object
+															"charCodeAt" |-> vd(stringCharCodeAtOid, false, false, false)  //need object
+															"concat" |-> vd(stringConcatOid, false, false, false)  //need object
+															"indexOf" |-> vd(stringIndexOfOid, false, false, false)  //need object
+															"lastIndexOf" |-> vd(stringLastIndexOfOid, false, false, false)  //need object
+															"localeCompare" |-> vd(stringLocaleCompareOid, false, false, false)  //need object
+															"match" |-> vd(stringMatchOid, false, false, false)  //need object
+															"replace" |-> vd(stringReplaceOid, false, false, false)  //need object
+															"search" |-> vd(stringSearchOid, false, false, false)  //need object
+															"slice" |-> vd(stringSliceOid, false, false, false)  //need object
+															"split" |-> vd(stringSplitOid, false, false, false)  //need object
+															"substring" |-> vd(stringSubstringOid, false, false, false)  //need object
+															"toLowerCase" |-> vd(stringToLowerCaseOid, false, false, false)  //need object
+															"toLocaleLowerCase" |-> vd(stringToLocaleLowerCaseOid, false, false, false)  //need object
+															"toUpperCase" |-> vd(stringToUpperCaseOid, false, false, false)  //need object
+															"toLocaleUpperCase" |-> vd(stringToLocaleUpperCaseOid, false, false, false)  //need object
+															"trim" |-> vd(stringTrimOid, false, false, false)  //need object
+								 </properties>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "String" </class>
+                 <extensible> true </extensible>
+								 <primitiveValue> false </primitiveValue>
+               </obj>)
+         (. => <obj>
+                 <oid> stringConstrOid </oid>
+                 <properties> ("length" |-> vd(1, false,false, false)) 
+															("prototype" |-> vd(stringProtoOid, false,false, false)) 
+															("fromCharCode" |-> vd(stringProtoOid, false,false, false)) 
+								 </properties> 
+                 <prototype> functionProtoOid </prototype>
+                 <class> "String" </class>  //not sure, maybe Function?
+                 <extensible> true </extensible>
+               </obj>)
+         (. => <obj>
+                 <oid> booleanProtoOid </oid>
+                 <properties> 
+															"constructor" |-> vd(booleanConstrOid, false, false, false)  
+															"toString" |-> vd(booleanToStringOid, false, false, false) //need object
+															"valueOf" |-> vd(booleanValueOfOid, false, false, false)  //need object
+								 </properties>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Boolean" </class>
+                 <extensible> true </extensible>
+								 <primitiveValue> false </primitiveValue>
+               </obj>)
+         (. => <obj>
+                 <oid> booleanConstrOid </oid>
+                 <properties> ("length" |-> vd(1, false,false, false)) 
+															("prototype" |-> vd(booleanProtoOid, false,false, false)) </properties> 
+                 <prototype> functionProtoOid </prototype>
+                 <class> "Boolean" </class>  //not sure, maybe Function?
+                 <extensible> true </extensible>
+               </obj>)
+         (. => <obj>
+                 <oid> numberProtoOid </oid>
+                 <properties> 
+															"constructor" |-> vd(numberConstrOid, false, false, false)  
+															"toString" |-> vd(numberToStringOid, false, false, false)  
+															"toLocaleString" |-> vd(numberToLocaleStringOid, false, false, false)  
+															"valueOf" |-> vd(numberValueOfOid, false, false, false)  
+															"toFixed" |-> vd(numberToFixedOid, false, false, false)  
+															"toExponential" |-> vd(numberToExponentialOid, false, false, false)  
+															"toPrecision" |-> vd(numberToPrecisionOid, false, false, false)  
+								 </properties>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Number" </class>
+                 <extensible> true </extensible>
+								 <primitiveValue> 0 </primitiveValue>
+               </obj>)
+         (. => <obj>
+                 <oid> numberConstrOid </oid>
+                 <properties> 
+                 							("length" |-> vd(1, false,false, false)) 
+															("prototype" |-> vd(numberProtoOid, false,false, false)) 
+															("MAX_VALUE" |-> vd(9999999, false,false, false))  //TODO: Make max value correct
+															("MIN_VALUE" |-> vd(1, false,false, false))  //TODO: Make min value correct
+															("NaN" |-> vd(NaN, false,false, false)) 
+															("NEGATIVE_INFINITY" |-> vd(9999999, false,false, false))  //TODO: Make value correct
+															("POSITIVE_INFINITY" |-> vd(1, false,false, false))  //TODO: Make value correct
+								 </properties> 
+                 <prototype> functionProtoOid </prototype>
+                 <class> "Function" </class> //not sure, maybe Function
                  <extensible> true </extensible>
                </obj>)
        </objs>
@@ -325,57 +441,138 @@ module JS
   //////////////////////////////////////////////////////////////////////////////
   // 9 Type Conversion and Testing
   //////////////////////////////////////////////////////////////////////////////
+  
+  syntax NonObject ::= "undefined"
+               | "nullVal"
+               | Bool
+               | Number
+               | String
+	syntax Val ::= NonObject
 
   // 9.1 ToPrimitive
   syntax K /* Val */ ::= toPrimitive(Val)
-  // TODO:
+	// TODO: defaultValue not yet implemented
+	
+	rule toPrimitive(V:NonObject) => V
+	rule <k> toPrimitive(V:Oid) => defaultValue(V) ...</k> 
 
   // 9.2 ToBoolean
   syntax K /* Val */ ::= toBoolean(Val)
-  // TODO:
+  // TODO: implement +0, -0
+
+  rule toBoolean(undefined) => false
+  rule toBoolean(nullVal) => false
+  rule toBoolean(B:Bool) => B
+  rule toBoolean(_:SpecialNumber) => false
+  rule <k> toBoolean(N:Number) => true ...</k> when N =/=K NaN
+  rule toBoolean(S:String) => lengthString(S) ==Int 0
 
   // 9.3 ToNumber
-  syntax K /* Val */ ::= toNumber(Val)
-  // TODO:
+  syntax K /* Val */ ::= toNumber(Val) | endToNumber(Val)
+  // TODO: +0, -0 Correctly
+
+  rule toNumber(undefined) => NaN
+  rule toNumber(nullVal) => 0
+  rule toNumber(true) => 1
+  rule toNumber(false) => 0
+  rule toNumber(N:Number) => N
+
+  //TODO: do correctly...
+	rule toNumber(S:String) => String2Float(S)
+  
+  rule toNumber(O:Oid) => toPrimitive(O) ~> endToNumber(O)
+	rule V:Val ~> endToNumber(_) => toNumber(V)
+
+
 
   // 9.4 ToInteger
-  syntax K /* Val */ ::= toInteger(Val)
-  // TODO:
+  syntax K /* Val */ ::= toInteger(Val) | endToInteger(Val) |  evaluateInteger(Val)
+	//TODO: special Cases correctly, not sure if Float2Int follows Javascript specification
+
+	rule toInteger(V:Val) => toNumber(V) ~> endToInteger(V)
+	rule V:Val ~> endToInteger(_) => evaluateInteger(V)
+
+	rule evaluateInteger(NaN) => 0
+
+	rule evaluateInteger(I:Int) => I
+	rule evaluateInteger(F:Float) => Float2Int(F)
+	
 
   // 9.5 ToInt32: (Signed 32 Bit Integer)
-  syntax K /* Val */ ::= toInt32(Val)
-  // TODO:
+  syntax K /* Val */ ::= toInt32(Val) | endToInt32(Val) | evaluateInt32(Val)
+  // TODO: just using ToInteger for the time being
+  
+	rule toInt32(V:Val) => toInteger(V)
+
 
   // 9.6 ToUint32: (Unsigned 32 Bit Integer)
-  syntax K /* Val */ ::= toUint32(Val)
-  // TODO:
+  syntax K /* Val */ ::= toUint32(Val) | endToUint32(Val)
+  // TODO: just using ToInteger for the time being
+	rule toUint32(V:Val) => toInteger(V) ~> endToUint32(V)
+	rule I:Int ~> endToUint32(_) => absMInt(mi(32, I))
+	//rule I:Int ~> endToUint32(V) => mi(32, I) ~> endToUint32(V)
+	//rule MI:MInt ~> endToUint32(V) => absMInt(MI)
 
   // 9.7 ToUint16: (Unsigned 16 Bit Integer)
-  syntax K /* Val */ ::= toUint16(Val)
-  // TODO:
+  syntax K /* Val */ ::= toUint16(Val) | endToUint16(Val)
+  // TODO: just using ToInteger for the time being
+	rule toUint16(V:Val) => toInteger(V) ~> endToUint16(V)
+	rule I:Int ~> endToUint16(_) => absMInt(mi(16, I))
 
   // 9.8 ToString
-  syntax K /* Val */ ::= toString(Val)
-  rule <k> toString(S:String) => S ... </k>
+  syntax K /* Val */ ::= toString(Val) | endToString(Val)
+  rule toString(undefined) => "undefined"
+  rule toString(nullVal) => "null"
+  rule toString(true) => "true"
+  rule toString(false) => "false"
+	//number has its special rules (below)
+  rule toString(S:String) => S 
+  rule toString(O:Oid) => toPrimitive(O) ~> endToString(O) //TODO: need hint of String...
+	rule V:Val ~> endToString(_) => toString(V)
+
+	//number cases
+  rule toString(NaN) => "NaN"
+  rule toString(I:Int) => Int2String(I)
+  rule toString(F:Float) => Float2String(F)
   // TODO: other cases
 
   // 9.9 ToObject
   syntax K /* Val */ ::= toObject(Val)
-  // TODO:
+  // TODO: needs type error, object creation (from section 15)
+  //rule <k> toObject(undefined) => . ...</k> 
+  //rule <k> toObject(null) => . ...</k> 
+
+  //rule <k> toObject(O:Bool) => . ...</k> 
+  //rule <k> toObject(O:Number) => . ...</k> 
+  //rule <k> toObject(O:String) => . ...</k> 
+
+  rule toObject(O:Oid) => O 
 
   // 9.10 CheckObjectCoercible
   syntax K /* .K */ ::= checkObjectCoercible(Val)
-  rule <k> checkObjectCoercible(V:Val) => . ... </k>
-       when (V =/=K undefined) orBool
-            (V =/=K nullVal)
+  rule <k> checkObjectCoercible(V:Val) => . ... </k> 
+       when (V =/=K undefined) orBool (V =/=K nullVal)
+	//TODO: need a Type Error for Undefine, Null Cases
 
   // 9.11 IsCallable
   syntax K /* Bool */ ::= isCallable(Val)
-  // TODO:
+
+	rule isCallable(No:NonObject) => false
+  // TODO: object case
 
   // 9.12 The SameValue Algorithm
   syntax K /* Bool */ ::= sameValue(Val,Val)
-  // TODO:
+  // TODO: when different types, +0, -0 comparison
+  rule sameValue(undefined, undefined) => true
+  rule sameValue(nullVal, nullVal) => true
+  rule sameValue(NaN, NaN) => true
+  rule sameValue(V1:Int, V2:Int) => V1 ==Int V2
+  rule sameValue(V1:Float, V2:Float) => V1 ==Float V2
+  rule sameValue(V1:String, V2:String) => V1 ==String V2
+  rule sameValue(V1:Bool, V2:Bool) => V1 ==Bool V2
+  rule sameValue(V:Oid, V:Oid) => true
+  rule <k> sameValue(V1:Oid, V2:Oid) => false ...</k> when V1 =/=K V2
+
 
   //////////////////////////////////////////////////////////////////////////////
   // 10.2.1 Environment Records
@@ -759,8 +956,225 @@ module JS
   // 15.3 Function Objects
   // 15.4 Array Objects
   // 15.5 String Objects
+  syntax K /* Oid */ ::= newString(Val)
+  rule <k> newString(V:Val) => o(N) ... </k>
+       <objs>
+         <oids> (. => SetItem(o(N))) ... </oids>
+         (. => <obj>
+                 <oid> o(N) </oid>
+                 <properties> .Map </properties>
+                 <prototype> booleanProtoOid</prototype> // Object prototype object 15.2.4
+                 <class> "String" </class>
+                 <extensible> true </extensible>
+								 <primitiveValue> V </primitiveValue>
+               </obj>)
+         _
+       </objs>
+       when fresh(N:Int)
+
+	// Constructor Methods
+	// 15.5.3.2 String.fromCharCode ([char0 [, chart1 [,...]]])
+	
+	// Prototype Methods
+	// 15.5.4.2 String.prototype.toString()
+	syntax K ::= stringToString(Val)	
+
+	rule stringToString(S:String) => S
+
+	rule <k> stringToString(V:Oid) => S ...</k>
+			<oid> V </oid> <class> "String" </class> <primitiveValue> S </primitiveValue>
+
+	rule <k> stringToString(V:Oid) => typeErrorOid ...</k>
+			<oid> V </oid> <class> C </class> when C =/=K "String"
+
+	//type error for other values
+	rule stringToString(undefined) => typeErrorOid 
+	rule stringToString(nullVal) => typeErrorOid
+	rule stringToString(Bool) => typeErrorOid 
+	rule stringToString(Number) => typeErrorOid
+
+	// 15.5.4.3 String.prototype.valueOf()
+	syntax K ::= stringValueOf(Val)	
+
+	rule stringValueOf(S:String) => S
+
+	rule <k> stringValueOf(V:Oid) => S ...</k>
+			<oid> V </oid> <class> "String" </class> <primitiveValue> S </primitiveValue>
+
+	rule <k> stringValueOf(V:Oid) => typeErrorOid ...</k>
+			<oid> V </oid> <class> C </class> when C =/=K "String"
+
+	//type error for other values
+	rule stringValueOf(undefined) => typeErrorOid 
+	rule stringValueOf(nullVal) => typeErrorOid
+	rule stringValueOf(Bool) => typeErrorOid 
+	rule stringValueOf(Number) => typeErrorOid
+
+	// 15.5.4.4 String.prototype.charAt(pos)
+	// TODO allow more general objects (see note in 15.5.4.4)
+	syntax K ::= stringCharAt(String, Val) | endStringCharAt(String)
+
+	rule stringCharAt(S:String, V:Val) =>  checkObjectCoercible(S) ~> toInteger(V) ~> endStringCharAt(S)
+	rule <k> I:Int ~> endStringCharAt(S:String) => "" ...</k> when I <Int 0 orBool I >=Int lengthString(S)
+	rule <k> I:Int ~> endStringCharAt(S:String) => substrString(S, I, I +Int 1) ...</k> when I >=Int 0 andBool I <Int lengthString(S)
+
+	// 15.5.4.5 String.prototype.charCodeAt(pos)
+	// 15.5.4.6 String.prototype.concat([string1 [, string2 [,...]]])
+	// 15.5.4.7 String.prototype.indexOf(searchString,position)
+	// 15.5.4.8 String.prototype.lastIndexOf(searchString,position)
+	// 15.5.4.9 String.prototype.localeCompare(that)
+	// 15.5.4.10 String.prototype.match(regexp)
+	// 15.5.4.11 String.prototype.replace(searchValue,replaceValue)
+	// 15.5.4.12 String.prototype.serach(regexp)
+	// 15.5.4.13 String.prototype.slice(start,end)
+	// 15.5.4.14 String.prototype.split(separator,limit)
+	// 15.5.4.15 String.prototype.substring(start,end)
+	// 15.5.4.16 String.prototype.toLowerCase()
+	// 15.5.4.17 String.prototype.toLocaleLowerCase()
+	// 15.5.4.18 String.prototype.toUpperCase()
+	// 15.5.4.19 String.prototype.toLocaleUpperCase()
+	// 15.5.4.20 String.prototype.trim()
   // 15.6 Boolean Objects
+  syntax K /* Oid */ ::= newBool(Val)
+  rule <k> newBool(V:Val) => o(N) ... </k>
+       <objs>
+         <oids> (. => SetItem(o(N))) ... </oids>
+         (. => <obj>
+                 <oid> o(N) </oid>
+                 <properties> .Map </properties>
+                 <prototype> booleanProtoOid</prototype> // Object prototype object 15.2.4
+                 <class> "Boolean" </class>
+                 <extensible> true </extensible>
+								 <primitiveValue> V </primitiveValue>
+               </obj>)
+         _
+       </objs>
+       when fresh(N:Int)
+
+	// 15.6.4.2 Boolean.prototype.toString()
+		syntax K ::= booleanToString(Val)
+
+		rule booleanToString(true) => "true"
+		rule booleanToString(false) => "false"
+
+		rule <k> booleanToString(V:Oid) => "false" ...</k>
+				<oid> V </oid> <class> "Boolean" </class> <primitiveValue> true</primitiveValue>
+		rule <k> booleanToString(V:Oid) => "true" ...</k>
+				<oid> V </oid> <class> "Boolean" </class> <primitiveValue> false</primitiveValue>
+
+		rule <k> booleanToString(V:Oid) => typeErrorOid ...</k>
+				<oid> V </oid> <class> C </class> when C =/=K "Boolean"
+				
+
+		//type error for other values
+		rule booleanToString(undefined) => typeErrorOid 
+		rule booleanToString(nullVal) => typeErrorOid
+		rule booleanToString(Number) => typeErrorOid
+		rule booleanToString(String) => typeErrorOid 
+
+	// 15.6.4.3 Boolean.prototype.valueOf()
+		syntax K ::= booleanValueOf(Val) 
+		rule booleanValueOf(B:Bool) => B
+
+		rule <k> booleanValueOf(V:Oid) => B ...</k>
+				<oid> V </oid> <class> "Boolean" </class> <primitiveValue> B </primitiveValue>
+
+		rule <k> booleanValueOf(V:Oid) => typeErrorOid ...</k>
+				<oid> V </oid> <class> C </class> when C =/=K "Boolean"
+				
+
+		//type error for other values
+		rule booleanValueOf(undefined) => typeErrorOid 
+		rule booleanValueOf(nullVal) => typeErrorOid
+		rule booleanValueOf(Number) => typeErrorOid
+		rule booleanValueOf(String) => typeErrorOid 
+	
   // 15.7 Number Objects
+  syntax K /* Oid */ ::= newNumber(Val) | "newNumber()"
+
+	rule newNumber() => newNumber(0)
+  rule <k> newNumber(V:Val) => o(N) ... </k>
+       <objs>
+         <oids> (. => SetItem(o(N))) ... </oids>
+         (. => <obj>
+                 <oid> o(N) </oid>
+                 <properties> .Map </properties>
+                 <prototype> numberProtoOid</prototype> // Object prototype object 15.2.4
+                 <class> "Number" </class>
+                 <extensible> true </extensible>
+								 <primitiveValue> V </primitiveValue>
+               </obj>)
+         _
+       </objs>
+       when fresh(N:Int)
+
+	// 15.7.4.2 Number.prototype.toString([radix])
+	// TODO: needs Range Error Exception, implementation for toString for non-10 base numbers
+	syntax K ::= numberToString(Val, Val) | numberToString(Val)	| endNumberToString(Val)
+
+	rule numberToString(V) => numberToString(V, 10)
+	rule numberToString(V, undefined) => numberToString(V, 10)
+
+	rule numberToString(V1:Val, V2:Val) => toInteger(V2) ~> endNumberToString(V1)
+
+	rule 10 ~> endNumberToString(V) => toString(V)
+	rule <k> I:Int ~> endNumberToString(V) => typeErrorOid ...</k> when I >Int 36 orBool I <Int 2 //TODO should be Range Error
+
+	//Note they say that this is implementation specific TODO have a-z prepended to the front of the number
+	rule <k> I:Int ~> endNumberToString(V) => toString(V) ...</k> when I <=Int 36 andBool I >=Int 2
+
+	// 15.7.4.3 Number.prototype.toLocaleString()
+	syntax K ::= numberToLocaleString(Val, Val) | numberToLocaleString(Val)
+	//"permissible, but not encouraged, for it to return the same thing as toString"
+	rule numberToLocaleString(V1, V2) => numberToString(V1, V2)
+	rule numberToLocaleString(V) => numberToString(V)
+	
+	// 15.7.4.4 Number.prototype.valueOf()
+	syntax K ::= numberValueOf(Val) 
+	rule numberValueOf(N:Number) => N
+
+	rule <k> numberValueOf(V:Oid) => N ...</k>
+			<oid> V </oid> <class> "Number" </class> <primitiveValue> N </primitiveValue>
+
+	rule <k> numberValueOf(V:Oid) => typeErrorOid ...</k>
+			<oid> V </oid> <class> C </class> when C =/=K "Number"
+			
+
+	//type error for other values
+	rule numberValueOf(undefined) => typeErrorOid 
+	rule numberValueOf(nullVal) => typeErrorOid
+	rule numberValueOf(Bool) => typeErrorOid
+	rule numberValueOf(String) => typeErrorOid 
+	
+	// 15.7.4.5 Number.prototype.toFixed (fractionDigits) these need to be reworked....
+	// TODO needs RangeError exception, actually implement fraction representation
+	syntax K ::= numberToFixed(Val, Val) | endNumberToFixed(Val)
+
+	rule numberToFixed(V1, undefined) => 0 ~> endNumberToFixed(V1)
+	rule <k> numberToFixed(V1, V2) => toInteger(V2) ~> endNumberToFixed(V1) ...</k> when V2 =/=K undefined
+	
+	rule <k> I:Int ~> endNumberToFixed(_) => typeErrorOid ...</k> when I <Int 0 orBool I >Int 20 
+	rule <k> I:Int ~> endNumberToFixed(V) => toString(V) ...</k> when I >=Int 0 andBool I <=Int 20  //temp solution
+	
+	// 15.7.4.6 Number.prototype.toExponential (fractionDigits)
+	// TODO needs RangeError exception, actually implement fraction representation
+	syntax K ::= numberToExponential(Val, Val) | endNumberToExponential(Val)
+
+	rule numberToExponential(V1, undefined) => 0 ~> endNumberToExponential(V1)
+	rule <k> numberToExponential(V1, V2) => toInteger(V2) ~> endNumberToExponential(V1) ...</k> when V2 =/=K undefined
+	
+	rule <k> I:Int ~> endNumberToExponential(_) => typeErrorOid ...</k> when I <Int 0 orBool I >Int 20 
+	rule <k> I:Int ~> endNumberToExponential(V) => toString(V) ...</k> when I >=Int 0 andBool I <=Int 20  //temp solution
+	// 15.7.4.7 Number.prototype.toPrecision (precision)
+	// TODO needs RangeError exception, actually implement fraction representation
+	syntax K ::= numberToPrecision(Val, Val) | endNumberToPrecision(Val)
+
+	rule numberToPrecision(V1, undefined) => 0 ~> endNumberToPrecision(V1)
+	rule <k> numberToPrecision(V1, V2) => toInteger(V2) ~> endNumberToPrecision(V1) ...</k> when V2 =/=K undefined
+	
+	rule <k> I:Int ~> endNumberToPrecision(_) => typeErrorOid ...</k> when I <Int 0 orBool I >Int 20 
+	rule <k> I:Int ~> endNumberToPrecision(V) => toString(V) ...</k> when I >=Int 0 andBool I <=Int 20  //temp solution
+	
   // 15.8 The Math Object
   // 15.9 Date Objects
   // 15.10 RegExp (RegularExpression) Objects
@@ -888,7 +1302,9 @@ module JS
          _
        </objs>
        when fresh(N:Int)
-  // TODO: other cases, step 7
+			// TODO: other cases, step 7
+
+	// 13.2.3 TODO: Throw Code (thorws a TypeError exception)
 
   // 12.4 Expression Statement
   // TODO: This is a naive implementation
