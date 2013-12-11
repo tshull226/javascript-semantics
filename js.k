@@ -1,10 +1,11 @@
 require "js-syntax.k"
+require "builtins/mint.k"
 
 module JS
   imports JS-SYNTAX
 
   configuration <T>
-    <k> initConfig ~> $PGM:Program </k>
+    <k> initConfig ~> declFuns($PGM:SourceElements) ~> declVars($PGM) ~> execute($PGM) </k>
     <objs>
       <oids> .Set </oids> // 2^Oid
       // 8.6 The Object Type
@@ -192,6 +193,11 @@ module JS
   // TODO: other cases
 
   //////////////////////////////////////////////////////////////////////////////
+  // 8.9 The Completion Specification Type
+  //////////////////////////////////////////////////////////////////////////////
+  // TODO
+
+  //////////////////////////////////////////////////////////////////////////////
   // 8.12 Algorithms for Object Internal Methods
   //////////////////////////////////////////////////////////////////////////////
 
@@ -201,6 +207,16 @@ module JS
        <obj>
          <oid> O </oid>
          <properties> ... P |-> V:K ... </properties>
+         <class> S:String </class>
+         _
+       </obj>
+       when S =/=K "Arguments"
+  rule <k> getOwnProperty(O:Oid,P:PName) => V ... </k>
+       <obj>
+         <oid> O </oid>
+         <properties> ... P |-> V:K ... </properties>
+         <class> "Arguments" </class>
+         <parameterMap> .K </parameterMap>
          _
        </obj>
   rule <k> getOwnProperty(O:Oid,P:PName) => undefined ... </k>
@@ -210,8 +226,34 @@ module JS
          _
        </obj>
        when notBool(P in keys(Prop))
+  // 10.6 [[GetOwnProperty]] for arguments object
+  syntax K /* Val */ ::= endGetOwnPropertyFromArguments(Oid, Oid, PName)
+  rule <k> getOwnProperty(O:Oid, P:PName) => getOwnProperty(M, P) ~> endGetOwnPropertyFromArguments(O, M, P) ... </k>
+       <obj>
+         <oid> O </oid>
+         <class> "Arguments" </class>
+         <parameterMap> M </parameterMap>
+         _
+       </obj>
+       when M =/=K .K
+  rule <k> undefined ~> endGetOwnPropertyFromArguments(O, _, P) => V ...</k>
+       <obj>
+         <oid> O </oid>
+         <properties> ... P |-> V:K ... </properties>
+         <class> "Arguments" </class>
+         _
+       </obj>
+  rule <k> V:Val ~> endGetOwnPropertyFromArguments(O, M, P) => get(M, P) ~> vd(HOLE, Wr, En, Co) ...</k>
+       <obj>
+         <oid> O </oid>
+         <properties> ... P |-> vd(_, Wr:Bool, En:Bool, Co:Bool) ... </properties>
+         <class> "Arguments" </class>
+         _
+       </obj>
+       when V =/=K undefined
+  rule <k> (V:Val => .) ~> vd(HOLE => V, _, _, _) ...</k>
 
-  // 8.12.2 [[getProperty]] (P)
+  // 8.12.2 [[GetProperty]] (P)
   syntax K /* Val */ ::= getProperty(Oid,PName) | endGetProperty(Oid,PName)
   rule <k> getProperty(O:Oid,P:PName) => getOwnProperty(O,P) ~> endGetProperty(O,P) ... </k>
   rule <k> V:Val ~> endGetProperty(_,_) => V ... </k>
@@ -233,11 +275,36 @@ module JS
   // 8.12.3 [[Get]] (P)
   syntax K /* Val */ ::= get(Oid,PName) | endGet(Oid,PName)
   rule <k> get(O:Oid,P:PName) => getProperty(O,P) ~> endGet(O,P) ... </k>
+       <obj>
+         <oid> O </oid>
+         <class> S:String </class>
+         _
+       </obj>
+       when S =/=K "Arguments"
+  rule <k> get(O:Oid,P:PName) => getProperty(O,P) ~> endGet(O,P) ... </k>
+       <obj>
+         <oid> O </oid>
+         <class> "Arguments" </class>
+         <parameterMap> .K </parameterMap>
+         _
+       </obj>
   rule <k> vd(V:Val,_,_,_) ~> endGet(_,_) => V ... </k>
   rule <k> va(Get:Oid,_,_,_) ~> endGet(O,_) => call(Get,O,.Vals) ... </k>
        when Get =/=K undefined
   rule <k> va(undefined,_,_,_) ~> endGet(_,_) => undefined ... </k>
   rule <k> undefined ~> endGet(_,_) => undefined ... </k>
+  // 10.6 [[Get]] for arguments object
+  syntax K /* Val */ ::= endGetFromArguments(Oid, Oid, PName)
+  rule <k> get(O:Oid, P:PName) => getOwnProperty(M, P) ~> endGetFromArguments(O, M, P) ...</k>
+       <obj>
+         <oid> O </oid>
+         <class> "Arguments" </class>
+         <parameterMap> M </parameterMap>
+         _
+       </obj>
+       when M =/=K .K
+  rule <k> undefined ~> endGetFromArguments(O, _, P) => getProperty(O, P) ~> endGet(O, P) ...</k>
+  rule <k> V:Val ~> endGetFromArguments(_, M, P) => get(M, P) ...</k> when V =/=K undefined
 
   // 8.12.4 [[CanPut]] (P)
   syntax K /* Bool */ ::= canPut(Oid,PName) | endCanPut(Oid,PName)
@@ -291,8 +358,52 @@ module JS
   rule <k> V:Val ~> endHasProperty(_,_) => V =/=K undefined ... </k>
 
   // 8.12.7 [[Delete]] (P, Throw)
-  syntax K /* .K */ ::= delete(Oid,PName)
+  syntax K /* .K */ ::= delete(Oid,PName) | endDelete(Oid,PName)
   // TODO:
+  rule <k> delete(O:Oid, P:PName)
+        => getOwnProperty(O, P) ~> endDelete(O, P) ...</k>
+       <obj>
+         <oid> O </oid>
+         <class> S:String </class>
+         _
+       </obj>
+       when S =/=K "Arguments"
+  rule <k> delete(O:Oid, P:PName)
+        => getOwnProperty(O, P) ~> endDelete(O, P) ...</k>
+       <obj>
+         <oid> O </oid>
+         <class> "Arguments" </class>
+         <parameterMap> .K </parameterMap>
+         _
+       </obj>
+  rule <k> undefined ~> endDelete(_, _) => . ...</k>
+  rule <k> vd(_, _, _, true) ~> endDelete(O, P) => . ...</k>
+       <obj>
+         <oid> O </oid>
+         <properties> P |-> _ => . ... </properties>
+         _
+       </obj>
+  rule <k> va(_, _, _, true) ~> endDelete(O, P) => . ...</k>
+       <obj>
+         <oid> O </oid>
+         <properties> P |-> _ => . ... </properties>
+         _
+       </obj>
+  // 10.6 [[Delete]] for arguments object
+  syntax K /* .K */ ::= endDeleteFromArguments(Oid, Oid, PName)
+  rule <k> delete(O:Oid, P:PName)
+        => getOwnProperty(O, P) ~> endDelete(O, P) ~> getOwnProperty(M, P) ~> endDeleteFromArguments(O, M, P) ...</k>
+       <obj>
+         <oid> O </oid>
+         <class> "Arguments" </class>
+         <parameterMap> M </parameterMap>
+         _
+       </obj>
+       when M =/=K .K
+  rule <k> undefined ~> endDeleteFromArguments(_, _, _) => . ...</k>
+  rule <k> V:Val ~> endDeleteFromArguments(_, M, P)
+        => delete(M, P) ...</k>
+       when V =/=K undefined
 
   // 8.12.8 [[DefaultValue]] (hint)
   syntax K /* Val */ ::= defaultValue(K)
@@ -302,6 +413,20 @@ module JS
   syntax K /* .K */ ::= defineOwnProperty(Oid,PName,Val) | endDefineOwnProperty(Oid,PName,Val)
   rule <k> defineOwnProperty(O:Oid,P:PName,V:Val)
         => getOwnProperty(O,P) ~> endDefineOwnProperty(O,P,V) ... </k>
+       <obj>
+         <oid> O </oid>
+         <class> S:String </class>
+         _
+       </obj>
+       when S =/=K "Arguments"
+  rule <k> defineOwnProperty(O:Oid,P:PName,V:Val)
+        => getOwnProperty(O,P) ~> endDefineOwnProperty(O,P,V) ... </k>
+       <obj>
+         <oid> O </oid>
+         <class> "Arguments" </class>
+         <parameterMap> .K </parameterMap>
+         _
+       </obj>
   // Step 4
   rule <k> undefined ~> endDefineOwnProperty(O:Oid,P:PName,vd(V:Val,Wr:Bool,En:Bool,Co:Bool))
         => . ... </k>
@@ -321,6 +446,37 @@ module JS
          _
        </obj>
   // TODO: other cases
+  rule <k> undefined ~> endDefineOwnProperty(O:Oid,P:PName,va(G:Val,S:Val,En:Bool,Co:Bool))
+        => . ... </k>
+       <obj>
+         <oid> O </oid>
+         <properties> (. => P |-> va(G,S,En,Co)) ... </properties>
+         <extensible> true </extensible>
+         _
+       </obj>
+  // 10.6 [[DefineOwnProperty]] for arguments object
+  syntax K /* .K */ ::= endDefineOwnPropertyToArguments(Oid, Oid, PName, Val)
+  // TODO: Update as defineOwnProperty is changed to return a boolean value.
+  rule <k> defineOwnProperty(O:Oid, P:PName, V:Val)
+        => getOwnProperty(O, P) ~> endDefineOwnProperty(O, P, V) ~> getOwnProperty(M, P) ~> endDefineOwnPropertyToArguments(O, M, P, V) ...</k>
+       <obj>
+         <oid> O </oid>
+         <class> "Arguments" </class>
+         <parameterMap> M </parameterMap>
+         _
+       </obj>
+       when M =/=K .K
+  rule <k> undefined ~> endDefineOwnPropertyToArguments(_, _, _, _) => . ...</k>
+  rule <k> V:Val ~> endDefineOwnPropertyToArguments(_, M, P, va(_, _, _, _))
+        => delete(M, P) ...</k>
+       when V =/=K undefined
+  rule <k> V:Val ~> endDefineOwnPropertyToArguments(_, M, P, vd(V', true, _, _))
+        => put(M, P, V') ...</k>
+       when V =/=K undefined
+  // TODO: Need review.
+  rule <k> V:Val ~> endDefineOwnPropertyToArguments(_, M, P, vd(V', false, _, _))
+        => put(M, P, V') ~> delete(M, P) ...</k>
+       when V =/=K undefined
 
   //////////////////////////////////////////////////////////////////////////////
   // 9 Type Conversion and Testing
@@ -358,6 +514,7 @@ module JS
   syntax K /* Val */ ::= toString(Val)
   rule <k> toString(S:String) => S ... </k>
   // TODO: other cases
+  rule toString(I:Int) => Int2String(I)
 
   // 9.9 ToObject
   syntax K /* Val */ ::= toObject(Val)
@@ -622,7 +779,12 @@ module JS
          _
        </obj>
   rule <k> E:Eid ~> endEnterFunBody(F:Oid,This:Oid,Args:Vals)
-        => declFunParams(F,Args) ... </k>
+        => declFunParams(F,Args) ~> declFuns(Code) ~> declVars(Code) ~> hasBinding(E, NameOfString("arguments")) ~> createArgumentsObj(F, Args) ... </k>
+       <obj>
+         <oid> F </oid>
+         <code> Code:FunBody </code>
+         _
+       </obj>
        <ctx>
          <activeStack> (. => active(R)) ... </activeStack>
          <running>
@@ -642,6 +804,7 @@ module JS
   // 10.5 Declaration Binding Instantiation
   //////////////////////////////////////////////////////////////////////////////
   // NOTE: We assume that all variable/function declarations are hoisted in advance.
+  // 10.5.4 Binding function arguments
   syntax K /* .K */ ::= declFunParams(Oid,Vals) | endDeclFunParams(Oid,Vals)
   rule <k> declFunParams(F:Oid,Args:Vals) => setParams(Ns,Args) ... </k>
        <obj>
@@ -655,10 +818,86 @@ module JS
         => var N; ~> assignExp(N,undefined); ~> setParams(Ns, .Vals) ... </k>
   rule <k> setParams((N:Name, Ns:Params), (V:Val, Vs:Vals))
         => var N; ~> assignExp(N,V); ~> setParams(Ns,Vs) ... </k>
-  // TODO: other cases: 'arguments' object
+
+  // 10.5.5 Binding nested functions
+  syntax K /* .K */ ::= declFuns(FunBody)
+  rule <k> declFuns(.SourceElements) => . ...</k>
+  rule <k> declFuns(S:Stmt SEs:SourceElements) => . ...</k>
+  rule <k> declFuns(F:FunExp SEs:SourceElements) => F ~> declFuns(SEs) ...</k>
+
+  // 10.5.8 Binding variables
+  syntax K /* .K */ ::= declVars(FunBody)
+  rule <k> declVars(.SourceElements) => . ...</k>
+  rule <k> declVars(_:OtherStmt SEs:SourceElements) => . ...</k>
+  rule <k> declVars(_:CaseStmt SEs:SourceElements) => . ...</k>
+  rule <k> declVars(F:FunExp SEs:SourceElements) => declVars(SEs) ...</k>
+  rule <k> declVars(DS:DeclStmt SEs:SourceElements) => DS ~> declVars(SEs) ...</k>
 
   // 10.6 Arguments Object
-  // TODO:
+  syntax K /* Oid */ ::= createArgumentsObj(Oid, Vals) | endCreateArgumentsObj(Oid, Vals, Params, Oid, Oid, Params, Int)
+  rule <k> true ~> createArgumentsObj(F:Oid,Args:Vals) => . ...</k>
+  rule <k> false ~> createArgumentsObj(F:Oid,Args:Vals)
+        => createArgumentsObj(F,Args) ~> createMutableBinding(E, NameOfString("arguments"), true) ~> setMutableBinding(E, NameOfString("arguments"), HOLE) ...</k>
+       <ctx>
+         <running>
+           <lexicalEnv> E:Eid </lexicalEnv>
+           _
+         </running>
+         _
+       </ctx>
+  rule <k> (O:Oid => .) ~> createMutableBinding(_,_,_) ~> setMutableBinding(_,_,HOLE => O) ... </k>
+  
+  rule <k> createArgumentsObj(F:Oid,Args:Vals)
+        => defineOwnProperty(o(N), "length", vd(length(Args), true, false, true)) ~> newObject ~> endCreateArgumentsObj(F, Args, Ps, o(N), HOLE, .Params, length(Args)) ...</k>
+       <objs>
+         <oids> (. => SetItem(o(N))) ... </oids>
+         (. => <obj>
+                 <oid> o(N) </oid>
+                 <properties> .Map </properties>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Arguments" </class>
+                 <extensible> true </extensible>
+                 <parameterMap> .K </parameterMap>
+               </obj>)
+         <obj>
+           <oid> F </oid>
+           <formalParameters> Ps:Params </formalParameters>
+           _
+         </obj>
+         _
+       </objs>
+       <ctx>
+         <running>
+           <lexicalEnv> E:Eid </lexicalEnv>
+           _
+         </running>
+         _
+       </ctx>
+       when fresh(N:Int)
+  rule <k> (O:Oid => .) ~> endCreateArgumentsObj(_, _, _, _, HOLE => O, _, _) ...</k>
+  rule <k> endCreateArgumentsObj(F, (A:Val, As:Vals), (P:Name, Ps:Params), O, M, MNs, L)
+        => defineOwnProperty(O, Int2String(L -Int length(As) -Int 1), vd(A, true, true, true))
+           ~> createFunObj(.Params, (print("getter\n"); return P; .SourceElements))
+           ~> createFunObj((appendArg(P), .Params), (print("setter\n"); P = appendArg(P); .SourceElements)) // TODO
+           // TODO: Replace Int2String with toPName
+           ~> defineOwnProperty(M, Int2String(L -Int length(As) -Int 1), va(HOLE, HOLE, true, true))
+           ~> endCreateArgumentsObj(F, As, Ps, O, M, (P, MNs), L)
+       ...
+       </k>
+  rule <k> (O:Oid => .) ~> createFunObj(_, _) ~> defineOwnProperty(_, _, va(HOLE => O, _, _, _)) ...</k>
+  rule <k> (O:Oid => .) ~> defineOwnProperty(_, _, va(_, HOLE => O, _, _)) ...</k>
+  rule <k> endCreateArgumentsObj(F, (A:Val, As:Vals), .Params, O, M, MNs, L)
+        // TODO: Replace Int2String with toPName
+        => defineOwnProperty(O, Int2String(L -Int length(As) -Int 1), vd(A, true, true, true)) ~> endCreateArgumentsObj(F, As, .Params, O, M, MNs, L) ...</k>
+  rule <k> endCreateArgumentsObj(F, .Vals, _, O, M, MNs => .Params, _) ...</k>
+       <obj>
+         <oid> O </oid>
+         <parameterMap> _ => M </parameterMap>
+         _
+       </obj>
+       when MNs =/=K .Params
+  rule <k> endCreateArgumentsObj(F, .Vals, _, O, _, .Params, _)
+        => defineOwnProperty(O, "callee", vd(F, true, false, true)) ~> O ...</k>
 
   //////////////////////////////////////////////////////////////////////////////
   // 11.1 Primary Expressions
@@ -721,7 +960,7 @@ module JS
   // 13.2.1 [[Call]]
   syntax K /* Val */ ::= call(Oid,Oid,Vals)
   rule <k> call(F:Oid,This:Oid,Args:Vals)
-        => enterFunBody(F,This,Args) ~> Code ~> exitFunBody ~> undefined ... </k>
+        => enterFunBody(F,This,Args) ~> execute(Code) ~> exitFunBody ~> undefined ... </k>
        <obj>
          <oid> F </oid>
          <code> Code:FunBody </code>
@@ -792,9 +1031,11 @@ module JS
          </running>
          _
        </ctx>
+  /*
   rule <k> var N:Name = E:Exp; => var N; ~> assignExp(N,E); ... </k>
   rule <k> var D:VarDecl, Ds:VarDeclS; => var D; ~> var Ds; ... </k>
        when Ds =/=K .VarDeclS
+  */
   // TODO: other cases
 
   // Step 5 of 10.5 Declaration Binding Instantiation
@@ -896,6 +1137,9 @@ module JS
        when Vs =/=K .Vals
   rule <k> _:Val; => . ... </k>
 
+  // 12.9 The return Statement
+  rule return; => return undefined; [macro]
+
   // 14 Program
   // TODO: Consider continue, break, etc. See 8.9 The Completion Specification Type
   rule <k> S:SourceElement Ss:SourceElements => S ~> Ss ... </k>
@@ -916,8 +1160,11 @@ module JS
   rule <k> l(X,Y) ~> getValue(HOLE) => getValue(l(X,Y)) ... </k>
 
   syntax K /* Int */ ::= length(Params) [function]
+                       | length(Vals) [function]
   rule length(_:Name, Ps:Params) => 1 +Int length(Ps)
   rule length(.Params) => 0
+  rule length(_:Val, Vs:Vals) => 1 +Int length(Vs)
+  rule length(.Vals) => 0
 
   syntax K /* Bool */ ::= isUndefOrDataDesc(Val) [function]
   rule isUndefOrDataDesc(undefined) => true
@@ -945,5 +1192,15 @@ module JS
   rule true  || _ => true
   rule false || E:Exp => E
   // TODO: other cases
+
+  syntax Name ::= appendArg(Name) [function]
+  rule appendArg(N:Name) => NameOfString(StringOfName(N) +String "_arg")
+
+  syntax K /* K */ ::= execute(FunBody) [function]
+  rule <k> execute(F:FunExp SEs:SourceElements) => execute(SEs) ...</k>
+  rule <k> execute(DS:DeclStmt SEs:SourceElements) => execute(SEs) ...</k>
+  rule <k> execute(CS:CaseStmt SEs:SourceElements) => CS SEs ...</k>
+  rule <k> execute(OS:OtherStmt SEs:SourceElements) => OS SEs ...</k>
+  rule <k> execute(.SourceElements) => . ...</k>
 
 endmodule

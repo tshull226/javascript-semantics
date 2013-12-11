@@ -16,8 +16,9 @@ module JS-SYNTAX
 
   // A.4 Statements
   syntax Stmts ::= List{Stmt, ""}
-  syntax Stmt ::= Block
-                | "var" VarDeclS ";"
+  syntax DeclStmt ::= "var" VarDeclS ";"
+  syntax CaseStmt ::= "switch" "(" ExpS ")" CaseBlock   [strict(1)]
+  syntax OtherStmt ::= Block
                 | ";"
                 | ExpS ";"                              [strict(1)]
                 | "if" "(" ExpS ")" Stmt                [strict(1)]
@@ -36,13 +37,15 @@ module JS-SYNTAX
                 | "return" ExpS ";"                     [strict(1)]
                 | "with" "(" ExpS ")" Stmt              [strict(1)]
                 | Name ":" Stmt  // label
-                | "switch" "(" ExpS ")" CaseBlock       [strict(1)]
                 | "throw" ExpS ";"                      [strict(1)]
                 | "try" Block Catch
                 | "try" Block Finally
                 | "try" Block Catch Finally
                 | "debugger" ";"
                 | "print" "(" Exp ")" ";" [strict(1)]
+  syntax Stmt ::= DeclStmt
+                | CaseStmt
+                | OtherStmt
 
   syntax Block ::= "{" Stmts "}"
 
