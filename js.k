@@ -1296,7 +1296,7 @@ module JS
                </obj>)
          <obj>
            <oid> F::Oid </oid>
-           <prototype>... "prototype" |-> vd(Prototype:Oid,true,false,false) ...</prototype>
+           <properties>... "prototype" |-> vd(Prototype:Oid,true,false,false) ...</properties>
            _
          </obj>
          _
