@@ -71,6 +71,8 @@ module JS
                | Number
                | String
                | Oid
+
+	syntax Eid ::= e(Int)
   syntax Oid ::= o(Int)
                | "nullOid"
                | "globalOid"
@@ -1294,12 +1296,13 @@ module JS
                </obj>)
          <obj>
            <oid> F::Oid </oid>
-           <prototype> Prototype:Oid </prototype>
+           <prototype>... "prototype" |-> vd(Prototype:Oid,true,false,false) ...</prototype>
            _
          </obj>
          _
        </objs>
        when fresh(N:Int)
+			// TODO: other cases, step 7
 
 	// 13.2.3 TODO: Throw Code (thorws a TypeError exception)
 
