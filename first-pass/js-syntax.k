@@ -18,18 +18,16 @@ module JS-SYNTAX
   // A.4 Statements
   syntax Stmts ::= List{Stmt, ""}
   syntax DeclStmt ::= "var" VarDeclS ";"
-  syntax CaseStmt ::= "switch" "(" ExpS ")" CaseBlock
-  syntax OtherStmt ::= Block
-                | ";"
+  syntax ForStmt ::= "for" "(" "var" VarDecl "in" ExpS ")" Stmt
+  syntax OtherStmt ::= ";"
                 | ExpS ";"
                 | "if" "(" ExpS ")" Stmt                              [strict(2)]
                 | "if" "(" ExpS ")" Stmt "else" Stmt                  [strict(2), strict(3)]
                 | "do" Stmt "while" "(" ExpS ")" ";"                  [strict(1)]
                 | "while" "(" ExpS ")" Stmt                           [strict(2)]
                 | "for" "(" Exps  ";" Exps ";" Exps ")" Stmt          [strict(4)]
-                | "for" "(" "var" VarDeclS ";" Exps ";" Exps ")" Stmt [strict(4)]
+                | "for" "(" DeclStmt Exps ";" Exps ")" Stmt           [strict(1), strict(4)]
                 | "for" "(" LExp          "in" ExpS ")" Stmt          [strict(3)]
-                | "for" "(" "var" VarDecl "in" ExpS ")" Stmt          [strict(3)]
                 | "continue" ";"
                 | "continue" Name ";"
                 | "break" ";"
@@ -38,15 +36,17 @@ module JS-SYNTAX
                 | "return" ExpS ";"
                 | "with" "(" ExpS ")" Stmt                            [strict(2)]
                 | Name ":" Stmt                                       [strict(2)]
+                | "switch" "(" ExpS ")" CaseBlock                     [strict(2)]
                 | "throw" ExpS ";"              
-                | "try" Block Catch
-                | "try" Block Finally
-                | "try" Block Catch Finally
+                | "try" Block "catch" "(" Name ")" Block                     [strict(1)]
+                | "try" Block "finally" Block                                [strict(1)]
+                | "try" Block "catch" "(" Name ")" Block "finally" Block     [strict(1)]
                 | "debugger" ";"
                 | "print" "(" Exp ")" ";"
   syntax Stmt ::= DeclStmt
-                | CaseStmt
+                | ForStmt
                 | OtherStmt
+                | Block
 
   syntax Block ::= "{" Stmts "}"
 
@@ -59,9 +59,6 @@ module JS-SYNTAX
   syntax CaseClauses ::= List{CaseClause, ""}
   syntax CaseClause ::= "case" ExpS ":" Stmts 
   syntax DefaultClause ::= "default" ":" Stmts
-
-  syntax Catch ::= "catch" "(" Name ")" Block
-  syntax Finally ::= "finally" Block
 
   // A.3 Expressions
   syntax ExpS ::= NeList{Exp, ","}           

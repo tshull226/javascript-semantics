@@ -19,9 +19,46 @@ module JS
   </T>
 
   syntax KResult ::= OtherStmt
+                   | OtherStmtsBlock
+  syntax OtherStmt ::= OtherStmtsBlock
+                     | "for" "(" OtherStmt Exps ";" Exps ")" Stmt                                           [strict(4)]
+                     | "try" OtherStmtsBlock "catch" "(" Name ")" Block                                     [strict(3)]
+                     | "try" OtherStmtsBlock "catch" "(" Name ")" OtherStmtsBlock
+                     | "try" OtherStmtsBlock "finally" Block                                                [strict(2)]
+                     | "try" OtherStmtsBlock "finally" OtherStmtsBlock
+                     | "try" OtherStmtsBlock "catch" "(" Name ")" Block "finally" Block                     [strict(3)]
+                     | "try" OtherStmtsBlock "catch" "(" Name ")" OtherStmtsBlock "finally" Block           [strict(4)]
+                     | "try" OtherStmtsBlock "catch" "(" Name ")" OtherStmtsBlock "finally" OtherStmtsBlock
+  syntax OtherStmts ::= List{OtherStmt, ""}
+  syntax OtherStmtsBlock ::= "{" OtherStmts "}" [klabel('OtherStmtsBlock), onlyLabel]
 
   rule <k> SE:SourceElement SEs:SourceElements => SE ~> SEs ... </k>
 
+  syntax K ::= "processBlock" "(" Int ")"
+             | "endBlock"
+  rule <k> {Ss:Stmts} => processBlock(I) ...</k>
+       (. => <task>
+               <k> Ss ~> endBlock </k>
+               <fun> .List </fun>
+               <var> .Set </var>
+               <other> .List </other>
+               <out> .SourceElements </out>
+               <id> I </id>
+             </task>)
+       when fresh(I:Int)
+  rule <k> processBlock(I) => 'OtherStmtsBlock(Ss) ...</k>
+       <var> Var => Var Var' </var>
+       (<task>...
+          <k> .K </k>
+          <var> Var' </var>
+          <out> Ss:OtherStmts </out>
+          <id> I </id>
+        ...</task> => .)
+  rule <k> .SourceElements ~> endBlock => . </k>
+       <other> Other => .List </other>
+       <out> .SourceElements => finalize(.List, .Set, Other) </out>
+
+  syntax K ::= "registerFun" "(" Name "," Params "," Int ")"
   rule <k> function FN:Name ( Ps:Params ) { FB:SourceElements } => registerFun(FN, Ps, I) ...</k>
        (. => <task>
                <k> FB </k>
@@ -32,35 +69,42 @@ module JS
                <id> I </id>
              </task>)
        when fresh(I:Int)
-
-  syntax K ::= "registerFun" "(" Name "," Params "," Int ")"
   rule <k> registerFun(FN, Ps, I) => . ...</k>
        (<task>...
-          <k> .SourceElements </k>
+          <k> .K </k>
           <out> FB </out>
           <id> I </id>
         ...</task> => .)
        <fun>... (. => ListItem(function FN (Ps) { FB })) </fun>
 
-  rule <k> var N:Name; => N; ...</k>
+  syntax K ::= "registerVars" "(" VarDeclS ")"
+  syntax ExpS ::= VarDeclS
+  rule <k> var Ds:VarDeclS; => registerVars(Ds) ~> Ds; ...</k>
+  rule <k> registerVars(.VarDeclS) => . ...</k>
+  rule <k> registerVars(N:Name, Ds:VarDeclS) => registerVars(Ds) ...</k>
        <var> Var => Var SetItem(N) </var>
        when notBool(N in Var)
-  rule <k> var N:Name; => N; ...</k>
+  rule <k> registerVars(N:Name, Ds:VarDeclS) => registerVars(Ds) ...</k>
        <var> Var </var>
        when (N in Var)
-  rule <k> var N:Name = E:Exp; => N = E; ...</k>
+  rule <k> registerVars(N:Name = _:Exp, Ds:VarDeclS) => registerVars(Ds) ...</k>
        <var> Var => Var SetItem(N) </var>
        when notBool(N in Var)
-  rule <k> var N:Name = E:Exp; => N = E; ...</k>
+  rule <k> registerVars(N:Name = _:Exp, Ds:VarDeclS) => registerVars(Ds) ...</k>
        <var> Var </var>
        when (N in Var)
-  rule <k> var D:VarDecl, Ds:VarDeclS; => var D; ~> var Ds; ...</k>
-       when Ds =/=K .VarDeclS
+
+  rule <k> for(var N:Name in Es:ExpS) S:Stmt => for(N in Es) S ...</k>
+       <var> Var => Var SetItem(N) </var>
+       when notBool(N in Var)
+  rule <k> for(var N:Name in Es:ExpS) S:Stmt => for(N in Es) S ...</k>
+       <var> Var </var>
+       when (N in Var)
 
   rule <k> S:OtherStmt => . ...</k>
        <other>... (. => ListItem(S)) </other>
 
-  rule <k> .SourceElements </k>
+  rule <k> .SourceElements => .K </k>
        <fun> Fun => .List </fun>
        <var> Var => .Set </var>
        <other> Other => .List </other>
