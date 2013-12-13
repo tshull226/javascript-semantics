@@ -299,28 +299,115 @@ module JS
   // TODO:
 
   // 8.12.9 [[DefineOwnProperty]] (P, Desc, Throw)
-  syntax K /* .K */ ::= defineOwnProperty(Oid,PName,Val) | endDefineOwnProperty(Oid,PName,Val)
-  rule <k> defineOwnProperty(O:Oid,P:PName,V:Val)
-        => getOwnProperty(O,P) ~> endDefineOwnProperty(O,P,V) ... </k>
-  // Step 4
-  rule <k> undefined ~> endDefineOwnProperty(O:Oid,P:PName,vd(V:Val,Wr:Bool,En:Bool,Co:Bool))
-        => . ... </k>
+  syntax K /* .K */ ::= defineOwnProperty(Oid,PName,Val,Bool) | endDefineOwnProperty(Oid,PName,Val,Bool)
+  // DJ: first check if any existing value
+  // Step 1
+  rule <k> defineOwnProperty(O:Oid,P:PName,V:Val,Throw:Bool)
+        => getOwnProperty(O,P) ~> endDefineOwnProperty(O,P,V,Throw) ... </k>
+  // DJ: extensible needs to be true for the newly added value
+  // Step 3:
+  rule <k> undefined ~> endDefineOwnProperty(O:Oid,_,_,Throw:Bool)
+        => reject(Throw) ... </k>
+       <obj>
+         <oid> O </oid>
+         <extensible> false </extensible>
+         _
+       </obj>
+  // Step 4.a
+  rule <k> undefined ~> endDefineOwnProperty(O:Oid,P:PName,vd(V:Val,Wr:Bool,En:Bool,Co:Bool),_)
+        => true ... </k>
        <obj>
          <oid> O </oid>
          <properties> (. => P |-> vd(V,Wr,En,Co)) ... </properties>
          <extensible> true </extensible>
          _
        </obj>
-  // Step 10.b
-  rule <k> vd(_,_,_,true) ~> endDefineOwnProperty(O:Oid,P:PName,vd(V:Val,Wr:Bool,En:Bool,Co:Bool))
-        => . ... </k>
+  // Step 4.b
+  rule <k> undefined ~> endDefineOwnProperty(O:Oid,P:PName,va(Get:Val,Set:Val,En:Bool,Co:Bool),_)
+        => true ... </k>
        <obj>
          <oid> O </oid>
-         <properties> P |-> (_ => vd(V,Wr,En,Co)) ... </properties>
+         <properties> (. => P |-> va(Get,Set,En,Co)) ... </properties>
          <extensible> true </extensible>
          _
        </obj>
-  // TODO: other cases
+  // Step 5 TODO
+  // DJ: do nothing if the existing value is same with the new value
+  // Step 6
+  rule <k> vd(V1:Val,Wr1:Bool,En1:Bool,Co1:Bool) ~> endDefineOwnProperty(_,_,vd(V2:Val,Wr2:Bool,En2:Bool,Co2:Bool),_)
+        => true ... </k>
+       when sameValue(V1,V2) andBool
+            Wr1 ==K Wr2 andBool
+            En1 ==K En2 andBool
+            Co1 ==K Co2
+  rule <k> va(Get1:Val,Set1:Val,En1:Bool,Co1:Bool) ~> endDefineOwnProperty(_,_,va(Get2:Val,Set2:Val,En2:Bool,Co2:Bool),_)
+        => true ... </k>
+       when sameValue(Get1,Get2) andBool
+            sameValue(Set1,Set2) andBool
+            En1 ==K En2 andBool
+            Co1 ==K Co2
+  // Step 7
+  // NOTE: the pairs (vd,va) and (va,vd) are not needed to be considered because of Step 9.a
+  rule <k> vd(_,_,En1:Bool,false) ~> endDefineOwnProperty(_,_,vd(_,_,En2:Bool,Co2:Bool),Throw:Bool)
+        => reject(Throw) ... </k>
+       when Co2 orBool
+            En1 =/=K En2
+  rule <k> va(_,_,En1:Bool,false) ~> endDefineOwnProperty(_,_,va(_,_,En2:Bool,Co2:Bool),Throw:Bool)
+        => reject(Throw) ... </k>
+       when Co2 orBool
+            En1 =/=K En2
+  // Step 8 TODO
+  // Step 9.a
+  rule <k> vd(_,_,_,false) ~> endDefineOwnProperty(_,_,va(_,_,_,_),Throw:Bool) => reject(Throw) ... </k>
+  rule <k> va(_,_,_,false) ~> endDefineOwnProperty(_,_,vd(_,_,_,_),Throw:Bool) => reject(Throw) ... </k>
+  // Step 9.b
+  rule <k> vd(_,_,_,true) ~> endDefineOwnProperty(O:Oid,P:PName,va(Get:Val,Set:Val,En:Bool,Co:Bool),_)
+        => true ... </k>
+       <obj>
+         <oid> O </oid>
+         <properties> P |-> (_ => va(Get,Set,En,Co)) ... </properties>
+         _
+       </obj>
+  // Step 9.c
+  rule <k> va(_,_,_,true) ~> endDefineOwnProperty(O:Oid,P:PName,vd(V:Val,Wr:Bool,En:Bool,Co:Bool),_)
+        => true ... </k>
+       <obj>
+         <oid> O </oid>
+         <properties> P |-> (_ => vd(V,Wr,En,Co)) ... </properties>
+         _
+       </obj>
+  // Step 10.a
+  // TODO: what happens when Wr1 is true and Co1 is false?
+  rule <k> vd(V1:Val,false,_,false) ~> endDefineOwnProperty(_,_,vd(V2:Val,Wr2:Bool,_,_),Throw:Bool)
+        => reject(Throw) ... </k>
+       when Wr2 orBool
+            notBool(sameValue(V1,V2))
+  // Step 10.b
+  rule <k> vd(_,_,_,true) ~> endDefineOwnProperty(O:Oid,P:PName,vd(V:Val,Wr:Bool,En:Bool,Co:Bool),_)
+        => true ... </k>
+       <obj>
+         <oid> O </oid>
+         <properties> P |-> (_ => vd(V,Wr,En,Co)) ... </properties>
+         _
+       </obj>
+  // Step 11.a
+  // TODO: we need to have an way to specify either Get or Set
+  rule <k> va(Get1:Val,Set1:Val,_,false) ~> endDefineOwnProperty(_,_,va(Get2:Val,Set2:Val,_,_),Throw:Bool)
+        => reject(Throw) ... </k>
+       when notBool(sameValue(Get1,Get2)) orBool
+            notBool(sameValue(Set1,Set2))
+  // Step 11.b (?)
+  rule <k> va(_,_,_,true) ~> endDefineOwnProperty(O:Oid,P:PName,va(Get:Val,Set:Val,En:Bool,Co:Bool),_)
+        => true ... </k>
+       <obj>
+         <oid> O </oid>
+         <properties> P |-> (_ => va(Get,Set,En,Co)) ... </properties>
+         _
+       </obj>
+  //
+  syntax K /* Bool */ ::= reject(Bool)
+//rule <k> reject(true) => TypeError ... </k> // TODO: throw TypeError
+  rule <k> reject(false) => false ... </k>
 
   //////////////////////////////////////////////////////////////////////////////
   // 9 Type Conversion and Testing
