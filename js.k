@@ -130,9 +130,9 @@ module JS
          (. => <obj>
                  <oid> globalOid </oid>
                  <properties>   
-															"Boolean" |-> booleanConstrOid 
+															"Boolean" |-> vd(booleanConstrOid,false,false,false)
 															"Function" |-> vd(functionConstrOid,false,false,false)
-															"Number" |-> numberConstrOid 
+															"Number" |-> vd(numberConstrOid,false,false,false)
 															"String" |-> vd(stringConstrOid,false,false,false)
 								 </properties> // TODO: It should be: String2Name("window") |-> globalOid (think this comment is dated?)
                  <prototype> nullOid </prototype>
