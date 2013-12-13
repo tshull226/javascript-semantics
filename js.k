@@ -18,11 +18,13 @@ module JS
         <prototype> .K </prototype> // Oid
         <class> .K </class> // String
         <extensible> .K </extensible> // Bool
+        <builtinFunction> false </builtinFunction> // Bool
         // Table 9 Internal Properties Only Defined for Some Objects
         <primitiveValue multiplicity="?"> .K </primitiveValue>
         <scope multiplicity="?"> .K </scope> // Eid
         <formalParameters multiplicity="?"> .K </formalParameters> // Params = Name list
-        <code multiplicity="?"> .K </code> // FunBody = SourceElement list
+        <code multiplicity="?"> .K </code> // FunBody = SourceElement list or String for builtin
+        <codeNew multiplicity="?"> .K </codeNew> // String for builtin
         <targetFunction multiplicity="?"> .K </targetFunction>
         <boundThis multiplicity="?"> .K </boundThis>
         <boundArguments multiplicity="?"> .K </boundArguments>
@@ -77,7 +79,8 @@ module JS
                | "nullOid"
                | "globalOid"
                | "objectProtoOid"
-               | "functionProtoOid"
+               | "functionProtoOid" | "functionConstrOid" | "functionToStringOid" | "functionApplyOid" 
+							 | "functionCallOid" | "functionBindOid"
                | "stringProtoOid" | "stringConstrOid" | "stringToStringOid" | "stringValueOfOid" | "stringCharAtOid" 
 							 | "stringCharCodeAtOid" | "stringConcatOid" | "stringIndexOfOid" | "stringLastIndexOfOid"
 							 | "stringLocaleCompareOid" | "stringMatchOid" | "stringReplaceOid" | "stringSearchOid" |"stringSliceOid"
@@ -86,7 +89,7 @@ module JS
                | "booleanProtoOid" | "booleanConstrOid" | "booleanToStringOid" | "booleanValueOfOid"
                | "numberProtoOid" | "numberConstrOid" | "numberToStringOid" | "numberToLocaleStringOid" | "numberValueOfOid"
 							 | "numberToFixedOid" | "numberToExponentialOid" | "numberToPrecisionOid"
-               | "typeErrorOid"
+               | "throwTypeErrorOid"
 
                  syntax Eid ::= e(Int)
                | "nullEid"
@@ -126,7 +129,12 @@ module JS
          // 15.1 The Global Object
          (. => <obj>
                  <oid> globalOid </oid>
-                 <properties> .Map  </properties> // TODO: It should be: String2Name("window") |-> globalOid
+                 <properties>   
+															"Boolean" |-> booleanConstrOid 
+															"Function" |-> vd(functionConstrOid,false,false,false)
+															"Number" |-> numberConstrOid 
+															"String" |-> vd(stringConstrOid,false,false,false)
+								 </properties> // TODO: It should be: String2Name("window") |-> globalOid (think this comment is dated?)
                  <prototype> nullOid </prototype>
                  <class> "Object" </class>
                  <extensible> true </extensible>
@@ -139,7 +147,7 @@ module JS
                  <extensible> true </extensible>
                </obj>)
          (. => <obj>
-                 <oid> typeErrorOid </oid>
+                 <oid> throwTypeErrorOid </oid>
                  <properties> "length" |-> vd(0, false, false, false) </properties>
                  <prototype> functionProtoOid </prototype>
                  <class> "Function" </class> 
@@ -150,10 +158,61 @@ module JS
                </obj>)
          (. => <obj>
                  <oid> functionProtoOid </oid>
-                 <properties> .Map  </properties>
+                 <properties>   
+															"length" |-> vd(0,false,false,false)  
+															"constructor" |-> vd(functionConstrOid,false,false,false)  
+															"toString" |-> vd(functionToStringOid,false,false,false)
+															"apply" |-> vd(functionApplyOid,false,false,false)
+															"call" |-> vd(functionCallOid,false,false,false)
+															"bind" |-> vd(functionBindOid,false,false,false)
+									</properties>
                  <prototype> objectProtoOid </prototype>
                  <class> "Function" </class>
                  <extensible> true </extensible>
+               </obj>)
+         (. => <obj>
+                 <oid> functionConstrOid </oid>
+                 <properties> 
+															"prototype" |-> vd(functionProtoOid,false,false,false) 
+															"length" |-> vd(1,false,false,false)  
+								 </properties>
+                 <prototype> functionProtoOid </prototype>
+                 <class> "Function" </class>
+                 <extensible> true </extensible>
+								 <code> "newFunction" </code>
+								 <codeNew> "newFunction" </codeNew>
+               </obj>)
+         (. => <obj>
+                 <oid> functionToStringOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "functionToString" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> functionApplyOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "functionApply" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> functionCallOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "functionCall" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> functionBindOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "functionBind" </code>
                </obj>)
          (. => <obj>
                  <oid> stringProtoOid </oid>
@@ -212,6 +271,13 @@ module JS
 															("prototype" |-> vd(booleanProtoOid, false,false, false)) </properties> 
                  <prototype> functionProtoOid </prototype>
                  <class> "Boolean" </class>  //not sure, maybe Function?
+                 <extensible> true </extensible>
+               </obj>)
+         (. => <obj>
+                 <oid> booleanToStringOid </oid>
+                 //<properties>	 </properties> 
+                 <prototype> functionProtoOid </prototype>
+                 <class> "Function" </class>  //not sure, maybe Function?
                  <extensible> true </extensible>
                </obj>)
          (. => <obj>
@@ -1154,15 +1220,39 @@ module JS
 
   // 11.2.3 Function Calls
   // 13.2.1 [[Call]]
+  //TODO: Have to consider Bindings (see 15.3.4.5.1)
   syntax K /* Val */ ::= call(Oid,Oid,Vals)
   rule <k> call(F:Oid,This:Oid,Args:Vals)
         => enterFunBody(F,This,Args) ~> execute(Code) ~> exitFunBody ~> undefined ... </k>
        <obj>
          <oid> F </oid>
          <code> Code:FunBody </code>
+				 <builtinFunction> false </builtinFunction> //not strictly necessary I hope
          _
        </obj>
   // TODO: Consider step 2 and return values
+ 
+  
+	//TODO calls for builtin 
+  syntax K /* Val */ ::= callBuiltinFunction(Oid,Oid,Vals)
+  rule <k> callBuiltinFunction(F:Oid,This:Oid,Args:Vals)
+        => determineBuiltinFunction(FunName, This, Args) ... </k>
+       <obj>
+         <oid> F </oid>
+         <code> FunName:String </code>
+				 <builtinFunction> true </builtinFunction> //not strictly necessary
+         _
+       </obj>
+
+  syntax K /* Val */ ::= callNewBuiltinFunction(Oid,Oid,Vals)
+  rule <k> callNewBuiltinFunction(F:Oid,This:Oid,Args:Vals)
+        => determineBuiltinFunction(FunName, This, Args) ... </k>
+       <obj>
+         <oid> F </oid>
+				 <codeNew> FunName:String </codeNew>
+				 <builtinFunction> true </builtinFunction> //not strictly necessary
+         _
+       </obj>
 
   // 13.2.3 The [[ThrowTypeError]] Function Object
   // TODO:
@@ -1170,6 +1260,10 @@ module JS
   //////////////////////////////////////////////////////////////////////////////
   // 15 Standard Built-in ECMAScript Objects
   //////////////////////////////////////////////////////////////////////////////
+
+	//Differentiating between different built-in functions
+	syntax K::= determineBuiltinFunction(String, Oid, Vals)
+	rule determineBuiltinFunction("functionToString", This, Args) => functionToString(This)
 
   // 15.1 The Global Object
   // 15.2 Object Objects
@@ -1192,6 +1286,41 @@ module JS
        when fresh(N:Int)
 
   // 15.3 Function Objects
+  syntax K /* Oid */ ::= "newFunction"
+  rule <k> newFunction => o(N) ... </k>
+       <objs>
+         <oids> (. => SetItem(o(N))) ... </oids>
+         (. => <obj>
+                 <oid> o(N) </oid>
+                 //<properties> </properties>
+                 <prototype> functionProtoOid</prototype> // Object prototype object 15.2.4
+                 <class> "Function" </class>
+                 <extensible> true </extensible>
+               </obj>)
+         _
+       </objs>
+       when fresh(N:Int)
+
+  // 15.3.4.2 Function.prototype.toString()
+  syntax K ::= functionToString(Val)
+
+	rule <k> functionToString(V:Oid) => "*** Function ***" ...</k>
+			<obj>
+				<oid> V </oid>
+				<class> "Function" </class>
+				_
+			</obj>
+		  <out> ... (. => ListItem("got to here!")) </out>
+
+	rule <k> functionToString(V:Oid) => throwTypeErrorOid ...</k>
+			<obj>
+				<oid> V </oid>
+				<class> C </class>
+				_
+			</obj> when C =/=K "Function"
+
+	rule functionToString(V:NonObject) => throwTypeErrorOid
+
   // 15.4 Array Objects
   // 15.5 String Objects
   syntax K /* Oid */ ::= newString(Val)
@@ -1201,7 +1330,7 @@ module JS
          (. => <obj>
                  <oid> o(N) </oid>
                  <properties> .Map </properties>
-                 <prototype> booleanProtoOid</prototype> // Object prototype object 15.2.4
+                 <prototype> stringProtoOid</prototype> // Object prototype object 15.2.4
                  <class> "String" </class>
                  <extensible> true </extensible>
 								 <primitiveValue> V </primitiveValue>
@@ -1222,14 +1351,14 @@ module JS
 	rule <k> stringToString(V:Oid) => S ...</k>
 			<oid> V </oid> <class> "String" </class> <primitiveValue> S </primitiveValue>
 
-	rule <k> stringToString(V:Oid) => typeErrorOid ...</k>
+	rule <k> stringToString(V:Oid) => throwTypeErrorOid ...</k>
 			<oid> V </oid> <class> C </class> when C =/=K "String"
 
 	//type error for other values
-	rule stringToString(undefined) => typeErrorOid 
-	rule stringToString(nullVal) => typeErrorOid
-	rule stringToString(Bool) => typeErrorOid 
-	rule stringToString(Number) => typeErrorOid
+	rule stringToString(undefined) => throwTypeErrorOid 
+	rule stringToString(nullVal) => throwTypeErrorOid
+	rule stringToString(Bool) => throwTypeErrorOid 
+	rule stringToString(Number) => throwTypeErrorOid
 
 	// 15.5.4.3 String.prototype.valueOf()
 	syntax K ::= stringValueOf(Val)	
@@ -1239,14 +1368,14 @@ module JS
 	rule <k> stringValueOf(V:Oid) => S ...</k>
 			<oid> V </oid> <class> "String" </class> <primitiveValue> S </primitiveValue>
 
-	rule <k> stringValueOf(V:Oid) => typeErrorOid ...</k>
+	rule <k> stringValueOf(V:Oid) => throwTypeErrorOid ...</k>
 			<oid> V </oid> <class> C </class> when C =/=K "String"
 
 	//type error for other values
-	rule stringValueOf(undefined) => typeErrorOid 
-	rule stringValueOf(nullVal) => typeErrorOid
-	rule stringValueOf(Bool) => typeErrorOid 
-	rule stringValueOf(Number) => typeErrorOid
+	rule stringValueOf(undefined) => throwTypeErrorOid 
+	rule stringValueOf(nullVal) => throwTypeErrorOid
+	rule stringValueOf(Bool) => throwTypeErrorOid 
+	rule stringValueOf(Number) => throwTypeErrorOid
 
 	// 15.5.4.4 String.prototype.charAt(pos)
 	// TODO allow more general objects (see note in 15.5.4.4)
@@ -1300,15 +1429,15 @@ module JS
 		rule <k> booleanToString(V:Oid) => "true" ...</k>
 				<oid> V </oid> <class> "Boolean" </class> <primitiveValue> false</primitiveValue>
 
-		rule <k> booleanToString(V:Oid) => typeErrorOid ...</k>
+		rule <k> booleanToString(V:Oid) => throwTypeErrorOid ...</k>
 				<oid> V </oid> <class> C </class> when C =/=K "Boolean"
 				
 
 		//type error for other values
-		rule booleanToString(undefined) => typeErrorOid 
-		rule booleanToString(nullVal) => typeErrorOid
-		rule booleanToString(Number) => typeErrorOid
-		rule booleanToString(String) => typeErrorOid 
+		rule booleanToString(undefined) => throwTypeErrorOid 
+		rule booleanToString(nullVal) => throwTypeErrorOid
+		rule booleanToString(Number) => throwTypeErrorOid
+		rule booleanToString(String) => throwTypeErrorOid 
 
 	// 15.6.4.3 Boolean.prototype.valueOf()
 		syntax K ::= booleanValueOf(Val) 
@@ -1317,15 +1446,15 @@ module JS
 		rule <k> booleanValueOf(V:Oid) => B ...</k>
 				<oid> V </oid> <class> "Boolean" </class> <primitiveValue> B </primitiveValue>
 
-		rule <k> booleanValueOf(V:Oid) => typeErrorOid ...</k>
+		rule <k> booleanValueOf(V:Oid) => throwTypeErrorOid ...</k>
 				<oid> V </oid> <class> C </class> when C =/=K "Boolean"
 				
 
 		//type error for other values
-		rule booleanValueOf(undefined) => typeErrorOid 
-		rule booleanValueOf(nullVal) => typeErrorOid
-		rule booleanValueOf(Number) => typeErrorOid
-		rule booleanValueOf(String) => typeErrorOid 
+		rule booleanValueOf(undefined) => throwTypeErrorOid 
+		rule booleanValueOf(nullVal) => throwTypeErrorOid
+		rule booleanValueOf(Number) => throwTypeErrorOid
+		rule booleanValueOf(String) => throwTypeErrorOid 
 	
   // 15.7 Number Objects
   syntax K /* Oid */ ::= newNumber(Val) | "newNumber()"
@@ -1356,7 +1485,7 @@ module JS
 	rule numberToString(V1:Val, V2:Val) => toInteger(V2) ~> endNumberToString(V1)
 
 	rule 10 ~> endNumberToString(V) => toString(V)
-	rule <k> I:Int ~> endNumberToString(V) => typeErrorOid ...</k> when I >Int 36 orBool I <Int 2 //TODO should be Range Error
+	rule <k> I:Int ~> endNumberToString(V) => throwTypeErrorOid ...</k> when I >Int 36 orBool I <Int 2 //TODO should be Range Error
 
 	//Note they say that this is implementation specific TODO have a-z prepended to the front of the number
 	rule <k> I:Int ~> endNumberToString(V) => toString(V) ...</k> when I <=Int 36 andBool I >=Int 2
@@ -1374,15 +1503,15 @@ module JS
 	rule <k> numberValueOf(V:Oid) => N ...</k>
 			<oid> V </oid> <class> "Number" </class> <primitiveValue> N </primitiveValue>
 
-	rule <k> numberValueOf(V:Oid) => typeErrorOid ...</k>
+	rule <k> numberValueOf(V:Oid) => throwTypeErrorOid ...</k>
 			<oid> V </oid> <class> C </class> when C =/=K "Number"
 			
 
 	//type error for other values
-	rule numberValueOf(undefined) => typeErrorOid 
-	rule numberValueOf(nullVal) => typeErrorOid
-	rule numberValueOf(Bool) => typeErrorOid
-	rule numberValueOf(String) => typeErrorOid 
+	rule numberValueOf(undefined) => throwTypeErrorOid 
+	rule numberValueOf(nullVal) => throwTypeErrorOid
+	rule numberValueOf(Bool) => throwTypeErrorOid
+	rule numberValueOf(String) => throwTypeErrorOid 
 	
 	// 15.7.4.5 Number.prototype.toFixed (fractionDigits) these need to be reworked....
 	// TODO needs RangeError exception, actually implement fraction representation
@@ -1391,7 +1520,7 @@ module JS
 	rule numberToFixed(V1, undefined) => 0 ~> endNumberToFixed(V1)
 	rule <k> numberToFixed(V1, V2) => toInteger(V2) ~> endNumberToFixed(V1) ...</k> when V2 =/=K undefined
 	
-	rule <k> I:Int ~> endNumberToFixed(_) => typeErrorOid ...</k> when I <Int 0 orBool I >Int 20 
+	rule <k> I:Int ~> endNumberToFixed(_) => throwTypeErrorOid ...</k> when I <Int 0 orBool I >Int 20 
 	rule <k> I:Int ~> endNumberToFixed(V) => toString(V) ...</k> when I >=Int 0 andBool I <=Int 20  //temp solution
 	
 	// 15.7.4.6 Number.prototype.toExponential (fractionDigits)
@@ -1401,7 +1530,7 @@ module JS
 	rule numberToExponential(V1, undefined) => 0 ~> endNumberToExponential(V1)
 	rule <k> numberToExponential(V1, V2) => toInteger(V2) ~> endNumberToExponential(V1) ...</k> when V2 =/=K undefined
 	
-	rule <k> I:Int ~> endNumberToExponential(_) => typeErrorOid ...</k> when I <Int 0 orBool I >Int 20 
+	rule <k> I:Int ~> endNumberToExponential(_) => throwTypeErrorOid ...</k> when I <Int 0 orBool I >Int 20 
 	rule <k> I:Int ~> endNumberToExponential(V) => toString(V) ...</k> when I >=Int 0 andBool I <=Int 20  //temp solution
 	// 15.7.4.7 Number.prototype.toPrecision (precision)
 	// TODO needs RangeError exception, actually implement fraction representation
@@ -1410,7 +1539,7 @@ module JS
 	rule numberToPrecision(V1, undefined) => 0 ~> endNumberToPrecision(V1)
 	rule <k> numberToPrecision(V1, V2) => toInteger(V2) ~> endNumberToPrecision(V1) ...</k> when V2 =/=K undefined
 	
-	rule <k> I:Int ~> endNumberToPrecision(_) => typeErrorOid ...</k> when I <Int 0 orBool I >Int 20 
+	rule <k> I:Int ~> endNumberToPrecision(_) => throwTypeErrorOid ...</k> when I <Int 0 orBool I >Int 20 
 	rule <k> I:Int ~> endNumberToPrecision(V) => toString(V) ...</k> when I >=Int 0 andBool I <=Int 20  //temp solution
 	
   // 15.8 The Math Object
@@ -1520,7 +1649,11 @@ module JS
 
   // 11.2.3 Function Calls
   rule <k> F:Oid (Vs:Vals) => call(F,globalOid,Vs) ... </k>
+				<obj> <oid> F </oid> <builtinFunction> false </builtinFunction> _ </obj>
   // TODO: This is WRONG!! "this" object should be determined properly!!!
+
+  rule <k> F:Oid (Vs:Vals) => callBuiltinFunction(F,globalOid,Vs) ... </k>
+				<obj> <oid> F </oid> <builtinFunction> true </builtinFunction> _ </obj>
 
   // 11.2.2 The new Operator
   // 13.2.2 [[Construct]]
@@ -1537,12 +1670,16 @@ module JS
          <obj>
            <oid> F::Oid </oid>
            <properties> ... "prototype" |-> vd(Prototype:Oid,true,false,false) ... </properties>
+					 <builtinFunction> false </builtinFunction>
            _
          </obj>
          _
        </objs>
        when fresh(N:Int)
 			// TODO: other cases, step 7
+			
+  rule <k> new F:Oid (Vs:Vals) => callNewBuiltinFunction(F,globalOid,Vs) ... </k>
+				<obj> <oid> F </oid> <builtinFunction> true </builtinFunction> _ </obj>
 
 	// 13.2.3 TODO: Throw Code (thorws a TypeError exception)
 
