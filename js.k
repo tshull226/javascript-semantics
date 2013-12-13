@@ -281,7 +281,7 @@ module JS
   // TODO: Consider Step 3
   rule <k> (. => getProperty(O,P)) ~> true ~> endPut(O:Oid,P:PName,_) ... </k>
   rule <k> V':Val ~> true ~> endPut(O:Oid,P:PName,V:Val)
-        => defineOwnProperty(O,P,vd(V,true,true,true)) ... </k>
+        => defineOwnProperty(O,P,vd(V,true,true,true),false) ~> true? ... </k>
        when isUndefOrDataDesc(V')
   rule <k> va(_,Set:Oid,_,_) ~> true ~> endPut(O:Oid,_,V:Val) => call(Set,O,V) ~> ignore ... </k>
 
@@ -515,7 +515,7 @@ module JS
          _
        </env>
   rule <k> false ~> endCreateMutableBinding(E:Eid,N:Name,D:Bool)
-        => defineOwnProperty(O,PNameOfName(N),vd(undefined,true,true,D)) ... </k>
+        => defineOwnProperty(O,PNameOfName(N),vd(undefined,true,true,D),false) ~> true? ... </k>
        <env>
          <eid> E </eid>
          <objEnvRec>
@@ -800,9 +800,10 @@ module JS
        </ctx>
        when fresh(N:Int)
   rule <k> O':Oid ~> endCreateFunObj(O:Oid,Params:Params,FunBody:FunBody)
-        => defineOwnProperty(O, "length", vd(length(Params),false,false,false)) ~>
-           defineOwnProperty(O, "prototype", vd(O',true,false,false)) ~>
-           defineOwnProperty(O', "constructor", vd(O,true,false,true)) ~> O ... </k>
+        => defineOwnProperty(O, "length", vd(length(Params),false,false,false), false) ~> true? ~>
+           defineOwnProperty(O, "prototype", vd(O',true,false,false), false) ~> true? ~>
+           defineOwnProperty(O', "constructor", vd(O,true,false,true), false) ~> true? ~>
+           O ... </k>
 
   // 11.2.3 Function Calls
   // 13.2.1 [[Call]]
@@ -941,7 +942,7 @@ module JS
   rule <k> (. => toPName(P)) ~> assignProp(P:PropertyName : _) ~> assignProps(_,_) ... </k>
   rule <k> (. => E) ~> _:PName ~> assignProp(_ : E:Exp) ~> assignProps(_,_) ... </k>
   rule <k> (V:Val ~> P:PName ~> assignProp(_ : _)
-            => defineOwnProperty(O,P,vd(V,true,true,true))
+            => defineOwnProperty(O,P,vd(V,true,true,true),false) ~> true?
            ) ~> assignProps(O:Oid,_) ... </k>
   // TODO: Consider get, set properties
   //
