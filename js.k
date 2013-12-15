@@ -295,8 +295,54 @@ module JS
   // TODO:
 
   // 8.12.8 [[DefaultValue]] (hint)
-  syntax K /* Val */ ::= defaultValue(K)
-  // TODO:
+  syntax K /* Val */ ::= defaultValue(Oid,String)
+  rule <k> defaultValue(O:Oid,"String") => defaultValueString(O) ... </k>
+  rule <k> defaultValue(O:Oid,"Number") => defaultValueNumber(O) ... </k>
+  rule <k> defaultValue(O:Oid,"") => defaultValueString(O) ... </k>
+       <obj>
+         <oid> O </oid>
+         <class> "Date" </class>
+         _
+       </obj>
+  rule <k> defaultValue(O:Oid,"") => defaultValueNumber(O) ... </k>
+       <obj>
+         <oid> O </oid>
+         <class> Class:String </class>
+         _
+       </obj>
+       when Class =/=K "Date"
+  //
+  syntax K /* Val */ ::= defaultValueString(Oid)
+  rule <k> defaultValueString(O:Oid)
+        => k(get(O,"toString")) ~> ks(defaultValueString(O)) ... </k>
+  rule <k> ( V:Val => k(isCallable(V))
+           ) ~> ks(get(_,_) ~> defaultValueString(_)) ... </k>
+  rule <k> true ~> ks(isCallable(F:Oid) ~> get(_,_) ~> defaultValueString(O:Oid))
+        => k(call(F,O,.Vals)) ... </k>
+  rule <k> ( false => k(get(O,"valueOf"))
+           ) ~> ks(isCallable(_) ~> get(_,_) ~> defaultValueString(O:Oid)) ... </k>
+  rule <k> ( V:Val => k(isCallable(V))
+           ) ~> ks(get(_,_) ~> isCallable(_) ~> get(_,_) ~> defaultValueString(_)) ... </k>
+  rule <k> true ~> ks(isCallable(F:Oid) ~> get(_,_) ~> isCallable(_) ~> get(_,_) ~> defaultValueString(O:Oid))
+        => k(call(F,O,.Vals)) ... </k>
+  rule <k> false ~> ks(isCallable(_) ~> get(_,_) ~> isCallable(_) ~> get(_,_) ~> defaultValueString(_))
+        => throwTypeError ... </k>
+  //
+  syntax K /* Val */ ::= defaultValueNumber(Oid)
+  rule <k> defaultValueNumber(O:Oid)
+        => k(get(O,"valueOf")) ~> ks(defaultValueNumber(O)) ... </k>
+  rule <k> ( V:Val => k(isCallable(V))
+           ) ~> ks(get(_,_) ~> defaultValueNumber(_)) ... </k>
+  rule <k> true ~> ks(isCallable(F:Oid) ~> get(_,_) ~> defaultValueNumber(O:Oid))
+        => k(call(F,O,.Vals)) ... </k>
+  rule <k> ( false => k(get(O,"toString"))
+           ) ~> ks(isCallable(_) ~> get(_,_) ~> defaultValueNumber(O:Oid)) ... </k>
+  rule <k> ( V:Val => k(isCallable(V))
+           ) ~> ks(get(_,_) ~> isCallable(_) ~> get(_,_) ~> defaultValueNumber(_)) ... </k>
+  rule <k> true ~> ks(isCallable(F:Oid) ~> get(_,_) ~> isCallable(_) ~> get(_,_) ~> defaultValueNumber(O:Oid))
+        => k(call(F,O,.Vals)) ... </k>
+  rule <k> false ~> ks(isCallable(_) ~> get(_,_) ~> isCallable(_) ~> get(_,_) ~> defaultValueNumber(_))
+        => throwTypeError ... </k>
 
   // 8.12.9 [[DefineOwnProperty]] (P, Desc, Throw)
   syntax K /* .K */ ::= defineOwnProperty(Oid,PName,Val,Bool) | endDefineOwnProperty(Oid,PName,Val,Bool)
@@ -1013,6 +1059,12 @@ module JS
 
   rule <k> print(V:Val); => . ...</k>
        <out> ... (. => ListItem(V)) </out>
+
+  syntax K ::= ks(K) // K's
+  syntax K ::= k(K)
+  rule <k> (k(K:K) => K) ~> ks((. => K) ~> _) ... </k>
+
+  syntax K /* Exception */ ::= "throwTypeError"
 
   rule - I:Int => 0 -Int I
   rule ! T:Bool => notBool(T)
