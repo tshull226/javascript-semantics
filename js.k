@@ -1041,7 +1041,7 @@ module JS
          _
        </obj>
   rule <k> E:Eid ~> endEnterFunBody(F:Oid,This:Oid,Args:Vals)
-        => declFunParams(F,Args) ~> declFuns(Code) ~> declVars(Code) ~> hasBinding(E, NameOfString("arguments")) ~> createArgumentsObj(F, Args) ... </k>
+        => declFunParams(F,Args) ~> declFuns(Code) ~> declVars(Code) ~> declArgumentsObj(F, Args) ... </k>
        <obj>
          <oid> F </oid>
          <code> Code:FunBody </code>
@@ -1096,10 +1096,8 @@ module JS
   rule <k> declVars(DS:DeclStmt SEs:SourceElements) => DS ~> declVars(SEs) ...</k>
 
   // 10.6 Arguments Object
-  syntax K /* Oid */ ::= createArgumentsObj(Oid, Vals) | endCreateArgumentsObj(Oid, Vals, Params, Oid, Oid, Params, Int)
-  rule <k> true ~> createArgumentsObj(F:Oid,Args:Vals) => . ...</k>
-  rule <k> false ~> createArgumentsObj(F:Oid,Args:Vals)
-        => createArgumentsObj(F,Args) ~> createMutableBinding(E, NameOfString("arguments"), true) ~> setMutableBinding(E, NameOfString("arguments"), HOLE) ...</k>
+  syntax K /* .K */ ::= declArgumentsObj(Oid, Vals) | endDeclArgumentsObj(Oid, Vals)
+  rule <k> declArgumentsObj(F:Oid, Args:Vals) => hasBinding(E, NameOfString("arguments")) ~> endDeclArgumentsObj(F, Args) ...</k>
        <ctx>
          <running>
            <lexicalEnv> E:Eid </lexicalEnv>
@@ -1107,8 +1105,18 @@ module JS
          </running>
          _
        </ctx>
-  rule <k> (O:Oid => .) ~> createMutableBinding(_,_,_) ~> setMutableBinding(_,_,HOLE => O) ... </k>
-  
+  rule <k> true ~> endDeclArgumentsObj(_, _) => . ...</k>
+  rule <k> false ~> endDeclArgumentsObj(F, Args) => createArgumentsObj(F, Args) ~> endDeclArgumentsObj(F, Args) ...</k>
+  rule <k> O:Oid ~> endDeclArgumentsObj(_, _)
+        => createMutableBinding(E, NameOfString("arguments"), true) ~> setMutableBinding(E, NameOfString("arguments"), O) ...</k>
+       <ctx>
+         <running>
+           <lexicalEnv> E:Eid </lexicalEnv>
+           _
+         </running>
+         _
+       </ctx>
+  syntax K /* Oid */ ::= createArgumentsObj(Oid, Vals) | endCreateArgumentsObj(Oid, Vals, Params, Oid, Oid, Params, Int)
   rule <k> createArgumentsObj(F:Oid,Args:Vals)
         => defineOwnProperty(o(N), "length", vd(length(Args), true, false, true)) ~> newObject ~> endCreateArgumentsObj(F, Args, Ps, o(N), HOLE, .Params, length(Args)) ...</k>
        <objs>
@@ -1146,8 +1154,8 @@ module JS
            ~> endCreateArgumentsObj(F, As, Ps, O, M, (P, MNs), L)
        ...
        </k>
-  rule <k> (O:Oid => .) ~> createFunObj(_, _) ~> defineOwnProperty(_, _, va(HOLE => O, _, _, _)) ...</k>
-  rule <k> (O:Oid => .) ~> defineOwnProperty(_, _, va(_, HOLE => O, _, _)) ...</k>
+  rule <k> (O:Oid => .) ~> createFunObj(_, _) ~> defineOwnProperty(_, _, va(HOLE => O, _, _, _)) ~> endCreateArgumentsObj(_, _, _, _, _, _, _) ...</k>
+  rule <k> (O:Oid => .) ~> defineOwnProperty(_, _, va(_, HOLE => O, _, _)) ~> endCreateArgumentsObj(_, _, _, _, _, _, _) ...</k>
   rule <k> endCreateArgumentsObj(F, (A:Val, As:Vals), .Params, O, M, MNs, L)
         // TODO: Replace Int2String with toPName
         => defineOwnProperty(O, Int2String(L -Int length(As) -Int 1), vd(A, true, true, true)) ~> endCreateArgumentsObj(F, As, .Params, O, M, MNs, L) ...</k>
@@ -1199,6 +1207,7 @@ module JS
                  <prototype> functionProtoOid </prototype>
                  <class> "Function" </class>
                  <extensible> true </extensible>
+                 <builtinFunction> false </builtinFunction>
                  <scope> E </scope>
                  <formalParameters> Params </formalParameters>
                  <code> FunBody </code>
