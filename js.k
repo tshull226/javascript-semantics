@@ -6,7 +6,7 @@ module JS
 	imports MINT
 
   configuration <T>
-    <k> initConfig ~> declFuns($PGM:SourceElements) ~> declVars($PGM) ~> execute($PGM) </k>
+    <k> initConfig ~> declFuns($PGM:SourceElements) ~> declVars($PGM) ~> execute($PGM) ~> complete </k>
     <objs>
       <oids> .Set </oids> // 2^Oid
       // 8.6 The Object Type
@@ -57,6 +57,7 @@ module JS
         // Table 19 Execution Context State Components
         <lexicalEnv> .K </lexicalEnv> // Eid
         <thisBinding> .K </thisBinding> // Oid
+        <completion> .K </completion> // Completion
       </running>
     </ctx>
     <in stream="stdin"> .List </in>
@@ -64,9 +65,9 @@ module JS
   </T>
 
   syntax Vals ::= List{Val, ","}
-	syntax Number ::= Int | Float | SpecialNumber 
-	syntax SpecialNumber ::=  "NaN"//  | "+0" | "-0" |  "Infinity"
-	//TODO: Differentiate between +0, -0
+  syntax Number ::= Int | Float | SpecialNumber 
+  syntax SpecialNumber ::=  "NaN"//  | "+0" | "-0" |  "Infinity"
+  //TODO: Differentiate between +0, -0
   syntax Val ::= "undefined"
                | "nullVal"
                | Bool
@@ -74,7 +75,6 @@ module JS
                | String
                | Oid
 
-	syntax Eid ::= e(Int)
   syntax Oid ::= o(Int)
                | "nullOid"
                | "globalOid"
@@ -91,7 +91,7 @@ module JS
 							 | "numberToFixedOid" | "numberToExponentialOid" | "numberToPrecisionOid"
                | "throwTypeErrorOid"
 
-                 syntax Eid ::= e(Int)
+  syntax Eid ::= e(Int)
                | "nullEid"
                | "globalEid" // 10.2.3 The Global Environment
   syntax Cid ::= c(Int)
@@ -332,6 +332,7 @@ module JS
          <running>
            <lexicalEnv> . => globalEid </lexicalEnv>
            <thisBinding> . => globalOid </thisBinding>
+           <completion> . => (normal, empty, empty) </completion>
          </running>
          <activeStack> . </activeStack>
        </ctx>
@@ -377,6 +378,14 @@ module JS
   // 8.9 The Completion Specification Type
   //////////////////////////////////////////////////////////////////////////////
   // TODO
+  syntax Completion ::= "(" Type "," Value "," Target ")"
+  syntax Type ::= "normal"
+                | "break"
+                | "continue"
+                | "return"
+                | "throw"
+  syntax Value ::= Val | "empty"
+  syntax Target ::= Name | "empty"
 
   //////////////////////////////////////////////////////////////////////////////
   // 8.12 Algorithms for Object Internal Methods
@@ -1051,15 +1060,25 @@ module JS
          <activeStack> (. => active(R)) ... </activeStack>
          <running>
            (R => <lexicalEnv> E </lexicalEnv>
-                 <thisBinding> This </thisBinding>)
+                 <thisBinding> This </thisBinding>
+                 <completion> (normal, empty, empty) </completion>)
          </running>
        </ctx>
-  //
+  // TODO: Consider exception.
   syntax K /* .K */ ::= "exitFunBody"
-  rule <k> exitFunBody => . ... </k>
+  rule <k> exitFunBody => V ... </k>
        <ctx>
          <activeStack> (active(R) => .) ... </activeStack>
-         <running> _ => R </running>
+         <running>
+           (<completion> (return, V:Val, _) </completion> _) => R
+         </running>
+       </ctx>
+  rule <k> exitFunBody => undefined ... </k>
+       <ctx>
+         <activeStack> (active(R) => .) ... </activeStack>
+         <running>
+           (<completion> (normal, _, _) </completion> _) => R
+         </running>
        </ctx>
 
   //////////////////////////////////////////////////////////////////////////////
@@ -1232,7 +1251,7 @@ module JS
   //TODO: Have to consider Bindings (see 15.3.4.5.1)
   syntax K /* Val */ ::= call(Oid,Oid,Vals)
   rule <k> call(F:Oid,This:Oid,Args:Vals)
-        => enterFunBody(F,This,Args) ~> execute(Code) ~> exitFunBody ~> undefined ... </k>
+        => enterFunBody(F,This,Args) ~> execute(Code) ~> exitFunBody ... </k>
        <obj>
          <oid> F </oid>
          <code> Code:FunBody </code>
@@ -1690,21 +1709,60 @@ module JS
   rule <k> new F:Oid (Vs:Vals) => callNewBuiltinFunction(F,globalOid,Vs) ... </k>
 				<obj> <oid> F </oid> <builtinFunction> true </builtinFunction> _ </obj>
 
-	// 13.2.3 TODO: Throw Code (thorws a TypeError exception)
+  // 13.2.3 TODO: Throw Code (thorws a TypeError exception)
+
+  // 12.1 Block
+  // TODO: Need to review for exception handling.
+  syntax K /* .K */ ::= endBlock(Completion)
+  rule <k> {Ss:Stmts} => Ss ~> endBlock((normal, empty, empty)) ...</k>
+  rule <k> .Stmts ~> endBlock(C:Completion) => C ...</k>
+  rule <k> S:Stmt Ss:Stmts ~> endBlock(C:Completion) => S ~> Ss ~> endBlock(C) ...</k>
+  rule <k> (throw, V:Value, empty) ~> _:Stmts ~> endBlock(_) => (throw, V, empty) ...</k>
+  rule <k> ((normal, empty, Tgt:Target) => .) ~> _:Stmts ~> endBlock((normal, _, _ => Tgt)) ...</k>
+  rule <k> ((normal, V:Value, Tgt:Target) => .) ~> _:Stmts ~> endBlock((normal, _ => V, _ => Tgt)) ...</k>
+
+  // 12.2 Variable Statement
+  // TODO: With the first pass, nothing to do. Need to discuss.
+
+  // 12.3 Empty Statement
+  rule <k> ; => (normal, empty, empty) ...</k>
 
   // 12.4 Expression Statement
   // TODO: This is a naive implementation
   rule <k> _:Val, Vs:Vals; => Vs; ... </k>
        when Vs =/=K .Vals
-  rule <k> _:Val; => . ... </k>
+  rule <k> V:Val; => (normal, V, empty) ... </k>
 
   // 12.9 The return Statement
   rule return; => return undefined; [macro]
+  rule <k> return V:Val; => (return, V, empty) ...</k>
 
   // 14 Program
   // TODO: Consider continue, break, etc. See 8.9 The Completion Specification Type
-  rule <k> S:SourceElement Ss:SourceElements => S ~> Ss ... </k>
-  rule <k> .SourceElements => . ... </k>
+  syntax K /* Completion */ ::= "complete"
+  rule <k> complete => C ...</k>
+       <running>
+         <completion> C:Completion </completion>
+         _
+       </running>
+  rule <k> .SourceElements => . ...</k>
+  rule <k> S:SourceElement Ss:SourceElements => S ~> Ss ...</k>
+  rule <k> (T:Type, V:Value, Tgt:Target) ~> _:SourceElements => . ...</k>
+       <running>
+         <completion> _ => (T, V, Tgt) </completion>
+         _
+       </running>
+       when T =/=K normal
+  rule <k> ((normal, empty, Tgt:Target) => .) ~> _:SourceElements ...</k>
+       <running>
+         <completion> (normal , _, _ => Tgt) </completion>
+         _
+       </running>
+  rule <k> ((normal, V:Value, Tgt:Target) => .) ~> _:SourceElements ...</k>
+       <running>
+         <completion> (normal , _ => V, _ => Tgt) </completion>
+         _
+       </running>
 
   //////////////////////////////////////////////////////////////////////////////
   // Utils
@@ -1762,6 +1820,6 @@ module JS
   rule <k> execute(DS:DeclStmt SEs:SourceElements) => execute(SEs) ...</k>
   rule <k> execute(CS:CaseStmt SEs:SourceElements) => CS SEs ...</k>
   rule <k> execute(OS:OtherStmt SEs:SourceElements) => OS SEs ...</k>
-  rule <k> execute(.SourceElements) => . ...</k>
+  rule <k> execute(.SourceElements) => .SourceElements ...</k>
 
 endmodule
