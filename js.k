@@ -1616,14 +1616,7 @@ module JS
   rule <k> P:PName ~> l(O:Oid,HOLE) => l(O,P) ... </k>
   rule <k> O:Oid[N:Val] => lv(O[N]) ~> getValue(HOLE) ... </k>
 
-/*
-	syntax K ::= endLvRef(Val)
-	context lvRef(lookupLExp(HOLE,_:Exps))
-	rule lvRef(O:Oid[E]) => lvRef(E) ~> endLvRef(O)
-	rule lvRef(E:Val) => endLvReg(E)
-	rule lvRef(E) => E ~> lvRef(HOLE) when notBool isPropertyLExp(E)
-	rule E:Val ~> lvRef(HOLE) => endLvRef(E)
-*/
+
 	syntax K ::= thisBinding(K,K)
 	
 	//rule lvRef(lookupLExp(lookupLExp(X,Y),Z)) => lvRef(lookupLExp(X,Y)) ~> lvRef(lookupLExp(HOLE,Z))
