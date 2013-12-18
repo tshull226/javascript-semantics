@@ -773,7 +773,7 @@ module JS
   // 9.10 CheckObjectCoercible
   syntax K /* .K */ ::= checkObjectCoercible(Val)
   rule <k> checkObjectCoercible(V:Val) => . ... </k> 
-       when (V =/=K undefined) orBool (V =/=K nullVal)
+       //when (V =/=K undefined) orBool (V =/=K nullVal) TODO this orBool is always true...
 	//TODO: need a Type Error for Undefine, Null Cases
 
   // 9.11 IsCallable
@@ -1616,6 +1616,28 @@ module JS
   rule <k> P:PName ~> l(O:Oid,HOLE) => l(O,P) ... </k>
   rule <k> O:Oid[N:Val] => lv(O[N]) ~> getValue(HOLE) ... </k>
 
+/*
+	syntax K ::= endLvRef(Val)
+	context lvRef(lookupLExp(HOLE,_:Exps))
+	rule lvRef(O:Oid[E]) => lvRef(E) ~> endLvRef(O)
+	rule lvRef(E:Val) => endLvReg(E)
+	rule lvRef(E) => E ~> lvRef(HOLE) when notBool isPropertyLExp(E)
+	rule E:Val ~> lvRef(HOLE) => endLvRef(E)
+*/
+	syntax K ::= thisBinding(K,K)
+	
+	//rule lvRef(lookupLExp(lookupLExp(X,Y),Z)) => lvRef(lookupLExp(X,Y)) ~> lvRef(lookupLExp(HOLE,Z))
+	rule lvRef(lookupLExp(Y,Z)) => lvRef(Y) ~> lvRef(lookupLExp(HOLE,Z))
+	//rule lvRef(E) => E ~> lvRef(HOLE) when notBool(islookupLExp(E))
+	//rule lvRef(E) => E ~> lvRef(HOLE) when notBool(isPropertyLExp(E))
+	rule lvRef(E:AtomicExp) => E ~> lvRef(HOLE)
+	rule E:Oid ~> lvRef(HOLE) => thisBinding(E,HOLE)
+	//rule thisBinding(E,HOLE) ~> lvRef(lookupLExp(HOLE,Z)) => lv(lookupLExp(E,Z)) ~> thisBinding(E,HOLE)
+	rule thisBinding(E,HOLE) ~> lvRef(lookupLExp(HOLE,Z)) => lookupLExp(E,Z) ~> thisBinding(E,HOLE)
+	rule E1:Oid ~> thisBinding(E2, _) => thisBinding(E2,E1)
+	//rule thisBinding(E,V) ~> lvRef(lookupLExp(HOLE,Z)) => lv(lookupLExp(V,Z)) ~> thisBinding(E,V) when V =/=K HOLE
+	rule thisBinding(E,V) ~> lvRef(lookupLExp(HOLE,Z)) => lookupLExp(V,Z) ~> thisBinding(E,V) when V =/=K HOLE
+
   // 11.13.1 Simple Assignment ( = )
   rule <k> assignExp(L:LExp,V:Val) => lv(L) ~> assignExp(HOLE,V) ... </k>
   rule <k> l(X,Y) ~> assignExp(HOLE,V:Val) => putValue(l(X,Y),V) ~> V ... </k>
@@ -1648,12 +1670,31 @@ module JS
   rule toPName(F:Float) => toString(F)
 
   // 11.2.3 Function Calls
-  rule <k> F:Oid (Vs:Vals) => call(F,globalOid,Vs) ... </k>
-				<obj> <oid> F </oid> <builtinFunction> false </builtinFunction> _ </obj>
+  //rule <k> F:Oid (Vs:Vals) => call(F,globalOid,Vs) ... </k>
+	//			<obj> <oid> F </oid> <builtinFunction> false </builtinFunction> _ </obj>
   // TODO: This is WRONG!! "this" object should be determined properly!!!
 
-  rule <k> F:Oid (Vs:Vals) => callBuiltinFunction(F,globalOid,Vs) ... </k>
+  //rule <k> F:Oid (Vs:Vals) => callBuiltinFunction(F,globalOid,Vs) ... </k>
+	//			<obj> <oid> F </oid> <builtinFunction> true </builtinFunction> _ </obj>
+	syntax K ::= endCall(Vals)
+	rule L:LExp (Vs:Vals) => lvRef(L) ~> endCall(Vs)
+
+	rule <k> thisBinding( T:Oid, F:Oid) ~> endCall(Vs) => call(F,T,Vs) ...</k>
+				<obj> <oid> F </oid> <builtinFunction> false </builtinFunction> _ </obj>
+
+	rule <k> thisBinding( F:Oid, HOLE) ~> endCall(Vs) => call(F,T,Vs) ...</k>
+				<obj> <oid> F </oid> <builtinFunction> false </builtinFunction> _ </obj>
+				<thisBinding> T </thisBinding> 
+
+	rule <k> thisBinding( T:Oid, F:Oid) ~> endCall(Vs) => callBuiltinFunction(F,T,Vs) ...</k>
 				<obj> <oid> F </oid> <builtinFunction> true </builtinFunction> _ </obj>
+
+	/* this should not be able to happen
+ 	rule <k> thisBinding( F:Oid, HOLE) ~> endCall(Vs) => callBuiltinFunction(F,T,Vs) ...</k>
+				<obj> <oid> F </oid> <builtinFunction> true </builtinFunction> _ </obj>
+				<thisBinding> T </thisBinding> 
+*/
+			
 
   // 11.2.2 The new Operator
   // 13.2.2 [[Construct]]
@@ -1710,6 +1751,8 @@ module JS
 
   syntax K /* Ref */ ::= lv(LExp)
   rule <k> l(X,Y) ~> getValue(HOLE) => getValue(l(X,Y)) ... </k>
+
+	syntax K /* Ref */ ::= lvRef(K)
 
   syntax K /* Int */ ::= length(Params) [function]
                        | length(Vals) [function]

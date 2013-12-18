@@ -97,12 +97,16 @@ module JS-SYNTAX
                         | Int
                         | Float
 
+	syntax PropertyLExp ::= LExp "[" Exps "]"             [seqstrict,klabel("'lookupLExp")]
+
   syntax LExp ::= AtomicExp
                 > FunExp
-                | LExp "[" Exps "]"                     [seqstrict,klabel("'lookupLExp")]
+                //| LExp "[" Exps "]"                     [seqstrict,klabel("'lookupLExp")]
+                | PropertyLExp
                 | LExp "." Name
                 | "new" LExp "(" Exps ")"               [seqstrict,prefer]
-                |       LExp "(" Exps ")"               [seqstrict] // TODO: WRONG!! It should be: [strict(2)]
+                //|       LExp "(" Exps ")"               [seqstrict] // TODO: WRONG!! It should be: [strict(2)]
+                |       LExp "(" Exps ")"               [strict(2)] // TODO: WRONG!! It should be: [strict(2)]
                 > "new" LExp                            [strict(1)]
 
   syntax Exp ::= LExp
