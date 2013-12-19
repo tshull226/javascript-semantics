@@ -1406,7 +1406,7 @@ module JS
          _
        </obj>
   rule <k> E:Eid ~> endEnterFunBody(F:Oid,This:Oid,Args:Vals)
-        => declFunParams(F,Args) ~> declFuns(Code) ~> declVars(Code) ~> declArgumentsObj(F, Args) ... </k>
+        => declFunParams(F,Args) ~> declFuns(Code) ~> declVars(Code) /* ~> declArgumentsObj(F, Args) */ ... </k>
        <obj>
          <oid> F </oid>
          <code> Code:FunBody </code>
@@ -1483,7 +1483,7 @@ module JS
        </ctx>
   syntax K /* Oid */ ::= createArgumentsObj(Oid, Vals) | endCreateArgumentsObj(Oid, Vals, Params, Oid, Oid, Params, Int)
   rule <k> createArgumentsObj(F:Oid,Args:Vals)
-        => defineOwnProperty(o(N), "length", vd(length(Args), true, false, true), false) ~> newObject ~> endCreateArgumentsObj(F, Args, Ps, o(N), HOLE, .Params, length(Args)) ...</k>
+        => defineOwnProperty(o(N), "length", vd(length(Args), true, false, true), false) ~> true? ~> newObject ~> endCreateArgumentsObj(F, Args, Ps, o(N), HOLE, .Params, length(Args)) ...</k>
        <objs>
          <oids> (. => SetItem(o(N))) ... </oids>
          (. => <obj>
@@ -1511,16 +1511,16 @@ module JS
        when fresh(N:Int)
   rule <k> (O:Oid => .) ~> endCreateArgumentsObj(_, _, _, _, HOLE => O, _, _) ...</k>
   rule <k> endCreateArgumentsObj(F, (A:Val, As:Vals), (P:Name, Ps:Params), O, M, MNs, L)
-        => defineOwnProperty(O, Int2String(L -Int length(As) -Int 1), vd(A, true, true, true), false)
+        => defineOwnProperty(O, Int2String(L -Int length(As) -Int 1), vd(A, true, true, true), false) ~> true?
            ~> createFunObj(.Params, (print("getter\n"); return P; .SourceElements))
            ~> createFunObj((appendArg(P), .Params), (print("setter\n"); P = appendArg(P); .SourceElements)) // TODO
            // TODO: Replace Int2String with toPName
-           ~> defineOwnProperty(M, Int2String(L -Int length(As) -Int 1), va(HOLE, HOLE, true, true), false)
+           ~> defineOwnProperty(M, Int2String(L -Int length(As) -Int 1), va(HOLE, HOLE, true, true), false) ~> true?
            ~> endCreateArgumentsObj(F, As, Ps, O, M, (P, MNs), L)
        ...
        </k>
-  rule <k> (O:Oid => .) ~> createFunObj(_, _) ~> defineOwnProperty(_, _, va(HOLE => O, _, _, _), _) ~> endCreateArgumentsObj(_, _, _, _, _, _, _) ...</k>
-  rule <k> (O:Oid => .) ~> defineOwnProperty(_, _, va(_, HOLE => O, _, _), _) ~> endCreateArgumentsObj(_, _, _, _, _, _, _) ...</k>
+  rule <k> (O:Oid => .) ~> createFunObj(_, _) ~> defineOwnProperty(_, _, va(HOLE => O, _, _, _), _) ~> true? ~> endCreateArgumentsObj(_, _, _, _, _, _, _) ...</k>
+  rule <k> (O:Oid => .) ~> defineOwnProperty(_, _, va(_, HOLE => O, _, _), _) ~> true? ~> endCreateArgumentsObj(_, _, _, _, _, _, _) ...</k>
   rule <k> endCreateArgumentsObj(F, (A:Val, As:Vals), .Params, O, M, MNs, L)
         // TODO: Replace Int2String with toPName
         => defineOwnProperty(O, Int2String(L -Int length(As) -Int 1), vd(A, true, true, true), false) ~> true? ~> endCreateArgumentsObj(F, As, .Params, O, M, MNs, L) ...</k>
