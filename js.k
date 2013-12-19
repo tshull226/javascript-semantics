@@ -887,7 +887,7 @@ module JS
   // 8.12.9 [[DefineOwnProperty]] (P, Desc, Throw)
   syntax K /* .K */ ::= defineOwnProperty(Oid,PName,Val,Bool) | endDefineOwnProperty(Oid,PName,Val,Bool)
   // DJ: first check if any existing value
-  // Step 1
+  // Step 1 (Combined with DefineOwnProperty of Arguments Objects)
   rule <k> defineOwnProperty(O:Oid,P:PName,V:Val,Throw:Bool)
         => getOwnProperty(O,P) ~> endDefineOwnProperty(O,P,V,Throw) ... </k>
        <obj>
@@ -1010,10 +1010,10 @@ module JS
   rule <k> reject(false) => false ... </k>
 
   // 10.6 [[DefineOwnProperty]] for arguments object
-  syntax K /* .K */ ::= endDefineOwnPropertyToArguments(Oid, Oid, PName, Val)
+  syntax K /* .K */ ::= endDefineOwnPropertyToArguments(Oid, Oid, PName, Val, Bool)
   // TODO: Update as defineOwnProperty is changed to return a boolean value.
-  rule <k> defineOwnProperty(O:Oid, P:PName, V:Val)
-        => getOwnProperty(O, P) ~> endDefineOwnProperty(O, P, V) ~> getOwnProperty(M, P) ~> endDefineOwnPropertyToArguments(O, M, P, V) ...</k>
+  rule <k> defineOwnProperty(O:Oid, P:PName, V:Val, Throw:Bool)
+        => getOwnProperty(O, P) ~> endDefineOwnProperty(O, P, V, Throw) ~> getOwnProperty(M, P) ~> endDefineOwnPropertyToArguments(O, M, P, V, Throw) ...</k>
        <obj>
          <oid> O </oid>
          <class> "Arguments" </class>
@@ -1021,15 +1021,15 @@ module JS
          _
        </obj>
        when M =/=K .K
-  rule <k> undefined ~> endDefineOwnPropertyToArguments(_, _, _, _) => . ...</k>
-  rule <k> V:Val ~> endDefineOwnPropertyToArguments(_, M, P, va(_, _, _, _))
+  rule <k> undefined ~> endDefineOwnPropertyToArguments(_, _, _, _, _) => . ...</k>
+  rule <k> V:Val ~> endDefineOwnPropertyToArguments(_, M, P, va(_, _, _, _), _)
         => delete(M, P) ...</k>
        when V =/=K undefined
-  rule <k> V:Val ~> endDefineOwnPropertyToArguments(_, M, P, vd(V', true, _, _))
+  rule <k> V:Val ~> endDefineOwnPropertyToArguments(_, M, P, vd(V', true, _, _), _)
         => put(M, P, V') ...</k>
        when V =/=K undefined
   // TODO: Need review.
-  rule <k> V:Val ~> endDefineOwnPropertyToArguments(_, M, P, vd(V', false, _, _))
+  rule <k> V:Val ~> endDefineOwnPropertyToArguments(_, M, P, vd(V', false, _, _), _)
         => put(M, P, V') ~> delete(M, P) ...</k>
        when V =/=K undefined
 
@@ -1049,7 +1049,7 @@ module JS
 	// TODO: defaultValue not yet implemented
 	
 	rule toPrimitive(V:NonObject) => V
-	rule <k> toPrimitive(V:Oid) => defaultValue(V) ...</k> 
+	rule <k> toPrimitive(V:Oid) => defaultValue(V,"") ...</k> 
 
   // 9.2 ToBoolean
   syntax K /* Val */ ::= toBoolean(Val)
@@ -1502,7 +1502,7 @@ module JS
        </ctx>
   syntax K /* Oid */ ::= createArgumentsObj(Oid, Vals) | endCreateArgumentsObj(Oid, Vals, Params, Oid, Oid, Params, Int)
   rule <k> createArgumentsObj(F:Oid,Args:Vals)
-        => defineOwnProperty(o(N), "length", vd(length(Args), true, false, true)) ~> newObject ~> endCreateArgumentsObj(F, Args, Ps, o(N), HOLE, .Params, length(Args)) ...</k>
+        => defineOwnProperty(o(N), "length", vd(length(Args), true, false, true), false) ~> newObject ~> endCreateArgumentsObj(F, Args, Ps, o(N), HOLE, .Params, length(Args)) ...</k>
        <objs>
          <oids> (. => SetItem(o(N))) ... </oids>
          (. => <obj>
@@ -1530,19 +1530,19 @@ module JS
        when fresh(N:Int)
   rule <k> (O:Oid => .) ~> endCreateArgumentsObj(_, _, _, _, HOLE => O, _, _) ...</k>
   rule <k> endCreateArgumentsObj(F, (A:Val, As:Vals), (P:Name, Ps:Params), O, M, MNs, L)
-        => defineOwnProperty(O, Int2String(L -Int length(As) -Int 1), vd(A, true, true, true))
+        => defineOwnProperty(O, Int2String(L -Int length(As) -Int 1), vd(A, true, true, true), false)
            ~> createFunObj(.Params, (print("getter\n"); return P; .SourceElements))
            ~> createFunObj((appendArg(P), .Params), (print("setter\n"); P = appendArg(P); .SourceElements)) // TODO
            // TODO: Replace Int2String with toPName
-           ~> defineOwnProperty(M, Int2String(L -Int length(As) -Int 1), va(HOLE, HOLE, true, true))
+           ~> defineOwnProperty(M, Int2String(L -Int length(As) -Int 1), va(HOLE, HOLE, true, true), false)
            ~> endCreateArgumentsObj(F, As, Ps, O, M, (P, MNs), L)
        ...
        </k>
-  rule <k> (O:Oid => .) ~> createFunObj(_, _) ~> defineOwnProperty(_, _, va(HOLE => O, _, _, _)) ~> endCreateArgumentsObj(_, _, _, _, _, _, _) ...</k>
-  rule <k> (O:Oid => .) ~> defineOwnProperty(_, _, va(_, HOLE => O, _, _)) ~> endCreateArgumentsObj(_, _, _, _, _, _, _) ...</k>
+  rule <k> (O:Oid => .) ~> createFunObj(_, _) ~> defineOwnProperty(_, _, va(HOLE => O, _, _, _), _) ~> endCreateArgumentsObj(_, _, _, _, _, _, _) ...</k>
+  rule <k> (O:Oid => .) ~> defineOwnProperty(_, _, va(_, HOLE => O, _, _), _) ~> endCreateArgumentsObj(_, _, _, _, _, _, _) ...</k>
   rule <k> endCreateArgumentsObj(F, (A:Val, As:Vals), .Params, O, M, MNs, L)
         // TODO: Replace Int2String with toPName
-        => defineOwnProperty(O, Int2String(L -Int length(As) -Int 1), vd(A, true, true, true)) ~> endCreateArgumentsObj(F, As, .Params, O, M, MNs, L) ...</k>
+        => defineOwnProperty(O, Int2String(L -Int length(As) -Int 1), vd(A, true, true, true), false) ~> true? ~> endCreateArgumentsObj(F, As, .Params, O, M, MNs, L) ...</k>
   rule <k> endCreateArgumentsObj(F, .Vals, _, O, M, MNs => .Params, _) ...</k>
        <obj>
          <oid> O </oid>
@@ -1551,7 +1551,7 @@ module JS
        </obj>
        when MNs =/=K .Params
   rule <k> endCreateArgumentsObj(F, .Vals, _, O, _, .Params, _)
-        => defineOwnProperty(O, "callee", vd(F, true, false, true)) ~> O ...</k>
+        => defineOwnProperty(O, "callee", vd(F, true, false, true), false) ~> true? ~> O ...</k>
 
   //////////////////////////////////////////////////////////////////////////////
   // 11.1 Primary Expressions
