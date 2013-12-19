@@ -191,6 +191,9 @@ module JS
 								 <code> "functionToString" </code>
                </obj>)
          (. => <obj>
+								<properties>
+														"length" |-> vd(2,false,false,false)
+								</properties>
                  <oid> functionApplyOid </oid>
                  <prototype> objectProtoOid </prototype>
                  <class> "Function" </class>
@@ -199,6 +202,9 @@ module JS
 								 <code> "functionApply" </code>
                </obj>)
          (. => <obj>
+								<properties>
+														"length" |-> vd(1,false,false,false)
+								</properties>
                  <oid> functionCallOid </oid>
                  <prototype> objectProtoOid </prototype>
                  <class> "Function" </class>
@@ -207,6 +213,9 @@ module JS
 								 <code> "functionCall" </code>
                </obj>)
          (. => <obj>
+								<properties>
+														"length" |-> vd(1,false,false,false)
+								</properties>
                  <oid> functionBindOid </oid>
                  <prototype> objectProtoOid </prototype>
                  <class> "Function" </class>
@@ -254,6 +263,173 @@ module JS
                  <extensible> true </extensible>
                </obj>)
          (. => <obj>
+                 <oid> stringToStringOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringToString" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringValueOfOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringValueOf" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringCharAtOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringCharAt" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringCharCodeAtOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringCharCodeAt" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringConcatOid </oid>
+								<properties>
+														"length" |-> vd(1,false,false,false)
+								</properties>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringConcat" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringIndexOfOid </oid>
+								 <properties>
+														"length" |-> vd(1,false,false,false)
+								 </properties>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringIndexOf" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringLastIndexOfOid </oid>
+								 <properties>
+														"length" |-> vd(1,false,false,false)
+								 </properties>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringLastIndexOf" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringLocaleCompareOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringLocaleCompare" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringMatchOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringMatch" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringReplaceOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringReplace" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringSearchOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringSearch" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringSliceOid </oid>
+								<properties>
+														"length" |-> vd(2,false,false,false)
+								</properties>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringSlice" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringSplitOid </oid>
+								<properties>
+														"length" |-> vd(2,false,false,false)
+								</properties>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringSplit" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringSubstringOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringSubstring" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringToLowerCaseOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringToLowerCase" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringToLocaleLowerCaseOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringToLocaleLowerCase" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringToUpperCaseOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringToUpperCase" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringToLocaleUpperCaseOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringToLocaleUpperCase" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> stringTrimOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "stringTrim" </code>
+               </obj>)
+         (. => <obj>
                  <oid> booleanProtoOid </oid>
                  <properties> 
 															"constructor" |-> vd(booleanConstrOid, false, false, false)  
@@ -275,10 +451,19 @@ module JS
                </obj>)
          (. => <obj>
                  <oid> booleanToStringOid </oid>
-                 //<properties>	 </properties> 
-                 <prototype> functionProtoOid </prototype>
-                 <class> "Function" </class>  //not sure, maybe Function?
-                 <extensible> true </extensible>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "booleanToString" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> booleanValueOfOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "booleanValueOf" </code>
                </obj>)
          (. => <obj>
                  <oid> numberProtoOid </oid>
@@ -310,6 +495,54 @@ module JS
                  <prototype> functionProtoOid </prototype>
                  <class> "Function" </class> //not sure, maybe Function
                  <extensible> true </extensible>
+               </obj>)
+         (. => <obj>
+                 <oid> numberToStringOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "numberToString" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> numberToLocaleStringOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "numberToLocaleString" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> numberValueOfOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "numberValueOf" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> numberToFixedOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "numberToFixed" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> numberToExponentialOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "numberToExponential" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> numberToPrecisionOid </oid>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Function" </class>
+								 <builtinFunction> true </builtinFunction>
+                 <extensible> false </extensible>
+								 <code> "numberToPrecision" </code>
                </obj>)
        </objs>
        <envs>
@@ -782,7 +1015,7 @@ module JS
   // 9.10 CheckObjectCoercible
   syntax K /* .K */ ::= checkObjectCoercible(Val)
   rule <k> checkObjectCoercible(V:Val) => . ... </k> 
-       when (V =/=K undefined) orBool (V =/=K nullVal)
+       //when (V =/=K undefined) orBool (V =/=K nullVal) TODO this orBool is always true...
 	//TODO: need a Type Error for Undefine, Null Cases
 
   // 9.11 IsCallable
@@ -1291,7 +1524,48 @@ module JS
 
 	//Differentiating between different built-in functions
 	syntax K::= determineBuiltinFunction(String, Oid, Vals)
+	//syntax K::= determineBuiltinFunction(String, Val, Vals) //probably needs to change to this eventually
+	//Function
 	rule determineBuiltinFunction("functionToString", This, Args) => functionToString(This)
+	rule determineBuiltinFunction("functionApply", This, A:Oid, A':Val, Args:Vals) => functionApply(This,A,A')
+	rule determineBuiltinFunction("functionCall", This, A:Oid, Args:Vals) => functionCall(This, A, Args)
+	rule determineBuiltinFunction("functionBind", This, A:Oid, Args:Vals) => functionBind(This, A, Args)
+	//String
+	rule determineBuiltinFunction("stringToString", This, Args) => stringToString(This)
+	rule determineBuiltinFunction("stringValueOf", This, Args) => stringValueOf(This)
+	rule determineBuiltinFunction("stringCharAt", This, A:Val, Args) => stringCharAt(This, A)
+	rule determineBuiltinFunction("stringConcat", This, Args) => stringConcat(This,Args)
+	rule determineBuiltinFunction("stringIndexOf", This, A:Val, A':Val, Args) => stringIndexOf(This,A,A')
+	rule determineBuiltinFunction("stringIndexOf", This, A:Val, .Vals) => stringIndexOf(This,A,0)
+	rule determineBuiltinFunction("stringLastIndexOf", This, A:Val, A':Val, Args) => stringLastIndexOf(This,A,A')
+	rule determineBuiltinFunction("stringLastIndexOf", This, A:Val, .Vals) => stringLastIndexOf(This,A,0)
+	rule determineBuiltinFunction("stringLocaleCompare", This, A:Val, Args) => stringLocaleCompare(This,A)
+	rule determineBuiltinFunction("stringMatch", This, A:Val, Args) => stringMatch(This,A)
+	rule determineBuiltinFunction("stringReplace", This, A:Val, A':Val, Args) => stringReplace(This,A,A')
+	rule determineBuiltinFunction("stringSearch", This, A:Val, Args) => stringSearch(This,A)
+	rule determineBuiltinFunction("stringSlice", This, A:Val, A':Val, Args) => stringSlice(This,A,A')
+	rule determineBuiltinFunction("stringSplit", This, A:Val, A':Val, Args) => stringSplit(This,A,A')
+	rule determineBuiltinFunction("stringSubstring", This, A:Val, A':Val, Args) => stringSubstring(This,A,A')
+	rule determineBuiltinFunction("stringToLowerCase", This, Args) => stringToLowerCase(This)
+	rule determineBuiltinFunction("stringToLocaleLowerCase", This, Args) => stringToLocaleLowerCase(This)
+	rule determineBuiltinFunction("stringToUpperCase", This, Args) => stringToUpperCase(This)
+	rule determineBuiltinFunction("stringToLocaleUpperCase", This, Args) => stringToLocaleUpperCase(This)
+	rule determineBuiltinFunction("stringTrim", This, Args) => stringTrim(This)
+	//Boolean
+	rule determineBuiltinFunction("booleanToString", This, Args) => booleanToString(This)
+	rule determineBuiltinFunction("booleanValueOf", This, Args) => booleanValueOf(This)
+	//Number
+	rule determineBuiltinFunction("numberToString", This, .Vals) => numberToString(This)
+	rule determineBuiltinFunction("numberToString", This, A:Val, Args) => numberToString(This,A)
+	rule determineBuiltinFunction("numberToLocaleString", This, .Vals) => numberToString(This)
+	rule determineBuiltinFunction("numberToLocaleString", This, A:Val, Args) => numberToString(This,A)
+	rule determineBuiltinFunction("numberValueOf", This, Args) => numberValueOf(This)
+	rule determineBuiltinFunction("numberToFixed", This, A:Val, Args) => numberToFixed(This,A)
+	rule determineBuiltinFunction("numberToFixed", This, .Vals) => numberToFixed(This, undefined)
+	rule determineBuiltinFunction("numberToExponential", This, A:Val, Args) => numberToExponential(This,A)
+	rule determineBuiltinFunction("numberToExponential", This, .Vals) => numberToExponential(This, undefined)
+	rule determineBuiltinFunction("numberToPrecision", This, A:Val, Args) => numberToPrecision(This,A)
+	rule determineBuiltinFunction("numberToPrecision", This, .Vals) => numberToPrecision(This, undefined)
 
   // 15.1 The Global Object
   // 15.2 Object Objects
@@ -1338,7 +1612,6 @@ module JS
 				<class> "Function" </class>
 				_
 			</obj>
-		  <out> ... (. => ListItem("got to here!")) </out>
 
 	rule <k> functionToString(V:Oid) => throwTypeErrorOid ...</k>
 			<obj>
@@ -1348,6 +1621,19 @@ module JS
 			</obj> when C =/=K "Function"
 
 	rule functionToString(V:NonObject) => throwTypeErrorOid
+
+	// 15.3.4.3 Function.prototype.apply(thisArg, argArray) 
+	syntax K ::= functionApply(Oid,Oid,Val)
+	//TODO: needs array to work...
+
+	// 15.3.4.4 Function.prototype.call(thisArg [,arg1 [,arg2, ....]])
+	syntax K ::= functionCall(Oid,Oid,Vals)
+	rule functionCall(F,This,Args) => call(F,This,Args)
+
+	// 15.3.4.5 Function.prototype.bind(thisArg [,arg1 [,arg2, ...]])
+	syntax K ::= functionBind(Oid,Oid,Vals)
+	//TODO: need to implement
+	
 
   // 15.4 Array Objects
   // 15.5 String Objects
@@ -1407,28 +1693,94 @@ module JS
 
 	// 15.5.4.4 String.prototype.charAt(pos)
 	// TODO allow more general objects (see note in 15.5.4.4)
-	syntax K ::= stringCharAt(String, Val) | endStringCharAt(String)
+	syntax K ::= stringCharAt(Val, Val) | endStringCharAt(String)
 
+	rule <k> stringCharAt(O:Oid, V:Val) => stringCharAt(S,V) ...</k>
+			<oid> O </oid> <class> "String" </class> <primitiveValue> S </primitiveValue>
 	rule stringCharAt(S:String, V:Val) =>  checkObjectCoercible(S) ~> toInteger(V) ~> endStringCharAt(S)
 	rule <k> I:Int ~> endStringCharAt(S:String) => "" ...</k> when I <Int 0 orBool I >=Int lengthString(S)
 	rule <k> I:Int ~> endStringCharAt(S:String) => substrString(S, I, I +Int 1) ...</k> when I >=Int 0 andBool I <Int lengthString(S)
 
 	// 15.5.4.5 String.prototype.charCodeAt(pos)
+	syntax K ::= stringCharCodeAt(Val, Val) | endStringCharAt(String) //TODO: Actually implement
 	// 15.5.4.6 String.prototype.concat([string1 [, string2 [,...]]])
+	syntax K ::= stringConcat(Val, Vals) 
+	rule stringConcat(V,Vs) => stringAggregateString(V, Vs) ~> endStringAggregateString("")
+
+	syntax K ::= stringAggregateString(Vals)					 
+									| endStringAggregateString(K) [strict]
+
+	rule stringAggregateString(.Vals) ~> endStringAggregateString(S:String) => S 
+	rule stringAggregateString( S:String,Vs) ~> endStringAggregateString (S':String) => stringAggregateString(Vs) ~> endStringAggregateString(S +String S')
+	rule <k> stringAggregateString( V:Oid,Vs) ~> endStringAggregateString (S':String) => stringAggregateString(Vs) ~> endStringAggregateString(S +String S') ...</k>
+			<oid> V </oid> <class> "String" </class> <primitiveValue> S:String </primitiveValue>
 	// 15.5.4.7 String.prototype.indexOf(searchString,position)
+	syntax K ::= stringIndexOf(Val, Val, Val) | endStringIndexOf(String,String)
+
+	rule <k> stringIndexOf(O:Oid, V, V') => stringIndexOf(S,V,V') ...</k>
+			<oid> O </oid> <class> "String" </class> <primitiveValue> S </primitiveValue>
+	rule <k> stringIndexOf(V:Oid, O:Oid, V') => stringIndexOf(V,S,V') ...</k>
+			<oid> O </oid> <class> "String" </class> <primitiveValue> S </primitiveValue>
+	rule stringIndexOf(S:String, S':String,V) =>  checkObjectCoercible(S) ~> toInteger(V) ~> endStringIndexOf(S,S')
+	rule <k> I:Int ~> endStringIndexOf(S,S') => -1 ...</k> when I <Int 0 orBool I >=Int lengthString(S)
+	rule <k> I:Int ~> endStringIndexOf(S,S') => findString(S, S', I ) ...</k> when I >=Int 0 andBool I <Int lengthString(S)
+
 	// 15.5.4.8 String.prototype.lastIndexOf(searchString,position)
+	syntax K ::= stringLastIndexOf(Val, Val, Val) | endStringLastIndexOf(String,String)
+
+	rule <k> stringLastIndexOf(O:Oid, V, V') => stringLastIndexOf(S,V,V') ...</k>
+			<oid> O </oid> <class> "String" </class> <primitiveValue> S </primitiveValue>
+	rule <k> stringLastIndexOf(V:Oid, O:Oid, V') => stringLastIndexOf(V,S,V') ...</k>
+			<oid> O </oid> <class> "String" </class> <primitiveValue> S </primitiveValue>
+	rule stringLastIndexOf(S:String, S':String,V) =>  checkObjectCoercible(S) ~> toInteger(V) ~> endStringLastIndexOf(S,S')
+	rule <k> I:Int ~> endStringLastIndexOf(S,S') => -1 ...</k> when I <Int 0 orBool I >=Int lengthString(S)
+	rule <k> I:Int ~> endStringLastIndexOf(S,S') => rfindString(S, S', I ) ...</k> when I >=Int 0 andBool I <Int lengthString(S)
 	// 15.5.4.9 String.prototype.localeCompare(that)
+	syntax K ::= stringLocaleCompare(Val, Val) | endLocaleCompare(K)
+	rule stringLocaleCompare(V:Val,V':Val) => toString(V) ~> toString(V') ~> endLocaleCompare(HOLE)
+	rule V:String ~> toString(V') ~> endLocaleCompare(HOLE) => toString(V') ~> endLocaleCompare(V)
+	//TODO: not sure what the builtin is here -> maybe ordChar ?
+	//rule V:String ~> endLocaleCompare(V':String) => 
 	// 15.5.4.10 String.prototype.match(regexp)
+	syntax K ::= stringMatch(Val,Val)	
+	//TODO: need to use regular expressions
 	// 15.5.4.11 String.prototype.replace(searchValue,replaceValue)
-	// 15.5.4.12 String.prototype.serach(regexp)
+	syntax K ::= stringReplace(Val, Val, Val) | endReplace(K,K)
+	rule stringReplace(V:Val,V':Val,V'':Val) => checkObjectCoercible(V) ~> toString(V) ~> toString(V') ~> toString(V'') ~> endReplace(HOLE,HOLE)
+	rule V:String ~> toString(V') ~> toString(V'') ~> endReplace(HOLE,HOLE) => toString(V') ~> toString(V'') ~> endReplace(V,HOLE)
+	rule V:String ~> toString(V') ~> endReplace(V'':String,HOLE) => toString(V') ~> endReplace(V'',V)
+	rule V:String ~> endReplace(T:String,V':String) => replaceFirst(T,V',V) 
+	// 15.5.4.12 String.prototype.search(regexp)
+	syntax K ::= stringSearch(Val,Val)	
+	//TODO: need to actually implement
 	// 15.5.4.13 String.prototype.slice(start,end)
+	syntax K ::= stringSlice(Val, Val, Val) | endSlice(K,K)
+	rule stringSlice(V:Val,V':Val,V'':Val) => checkObjectCoercible(V) ~> toString(V) ~> toInteger(V') ~> toInteger(V'') ~> endSlice(HOLE,HOLE)
+	rule V:String ~> toInteger(V') ~> toInteger(V'') ~> endSlice(HOLE,HOLE) => toInteger(V') ~> toInteger(V'') ~> endSlice(V,HOLE)
+	rule V:Int ~> toInteger(V') ~> endSlice(V'':String,HOLE) => toInteger(V') ~> endSlice(V'',V)
+	rule V:Int ~> endSlice(T:String,V':Int) => substrString(T,V',V) 
+  	
 	// 15.5.4.14 String.prototype.split(separator,limit)
+	syntax K ::= stringSplit(Val,Val,Val)	
 	// 15.5.4.15 String.prototype.substring(start,end)
+	syntax K ::= stringSubstring(Val, Val, Val) | endSubstring(K,K)
+	rule stringSubstring(V:Val,V':Val,V'':Val) => checkObjectCoercible(V) ~> toString(V) ~> toInteger(V') ~> toInteger(V'') ~> endSubstring(HOLE,HOLE)
+	rule V:String ~> toInteger(V') ~> toInteger(V'') ~> endSubstring(HOLE,HOLE) => toInteger(V') ~> toInteger(V'') ~> endSubstring(V,HOLE)
+	rule V:Int ~> toInteger(V') ~> endSubstring(V'':String,HOLE) => toInteger(V') ~> endSubstring(V'',V)
+	rule V:Int ~> endSubstring(T:String,V':Int) => substrString(T,V',V) 
 	// 15.5.4.16 String.prototype.toLowerCase()
+	syntax K ::= stringToLowerCase(Val)
 	// 15.5.4.17 String.prototype.toLocaleLowerCase()
+	syntax K ::= stringToLocaleLowerCase(Val)
 	// 15.5.4.18 String.prototype.toUpperCase()
+	syntax K ::= stringToUpperCase(Val)
 	// 15.5.4.19 String.prototype.toLocaleUpperCase()
+	syntax K ::= stringToLocaleUpperCase(Val)
 	// 15.5.4.20 String.prototype.trim()
+	syntax K ::= stringTrim(Val) | "endStringTrim"
+	rule stringTrim(V:Val) => stringToString(V) ~> endStringTrim
+	rule V:String ~> endStringTrim => trim(V)
+	
   // 15.6 Boolean Objects
   syntax K /* Oid */ ::= newBool(Val)
   rule <k> newBool(V:Val) => o(N) ... </k>
@@ -1644,6 +1996,21 @@ module JS
   rule <k> P:PName ~> l(O:Oid,HOLE) => l(O,P) ... </k>
   rule <k> O:Oid[N:Val] => lv(O[N]) ~> getValue(HOLE) ... </k>
 
+
+	syntax K ::= thisBinding(K,K)
+	
+	//rule lvRef(lookupLExp(lookupLExp(X,Y),Z)) => lvRef(lookupLExp(X,Y)) ~> lvRef(lookupLExp(HOLE,Z))
+	rule lvRef(lookupLExp(Y,Z)) => lvRef(Y) ~> lvRef(lookupLExp(HOLE,Z))
+	//rule lvRef(E) => E ~> lvRef(HOLE) when notBool(islookupLExp(E))
+	//rule lvRef(E) => E ~> lvRef(HOLE) when notBool(isPropertyLExp(E))
+	rule lvRef(E:AtomicExp) => E ~> lvRef(HOLE)
+	rule E:Oid ~> lvRef(HOLE) => thisBinding(E,HOLE)
+	//rule thisBinding(E,HOLE) ~> lvRef(lookupLExp(HOLE,Z)) => lv(lookupLExp(E,Z)) ~> thisBinding(E,HOLE)
+	rule thisBinding(E,HOLE) ~> lvRef(lookupLExp(HOLE,Z)) => lookupLExp(E,Z) ~> thisBinding(E,HOLE)
+	rule E1:Oid ~> thisBinding(E2, _) => thisBinding(E2,E1)
+	//rule thisBinding(E,V) ~> lvRef(lookupLExp(HOLE,Z)) => lv(lookupLExp(V,Z)) ~> thisBinding(E,V) when V =/=K HOLE
+	rule thisBinding(E,V) ~> lvRef(lookupLExp(HOLE,Z)) => lookupLExp(V,Z) ~> thisBinding(E,V) when V =/=K HOLE
+
   // 11.13.1 Simple Assignment ( = )
   rule <k> assignExp(L:LExp,V:Val) => lv(L) ~> assignExp(HOLE,V) ... </k>
   rule <k> l(X,Y) ~> assignExp(HOLE,V:Val) => putValue(l(X,Y),V) ~> V ... </k>
@@ -1676,12 +2043,31 @@ module JS
   rule toPName(F:Float) => toString(F)
 
   // 11.2.3 Function Calls
-  rule <k> F:Oid (Vs:Vals) => call(F,globalOid,Vs) ... </k>
-				<obj> <oid> F </oid> <builtinFunction> false </builtinFunction> _ </obj>
+  //rule <k> F:Oid (Vs:Vals) => call(F,globalOid,Vs) ... </k>
+	//			<obj> <oid> F </oid> <builtinFunction> false </builtinFunction> _ </obj>
   // TODO: This is WRONG!! "this" object should be determined properly!!!
 
-  rule <k> F:Oid (Vs:Vals) => callBuiltinFunction(F,globalOid,Vs) ... </k>
+  //rule <k> F:Oid (Vs:Vals) => callBuiltinFunction(F,globalOid,Vs) ... </k>
+	//			<obj> <oid> F </oid> <builtinFunction> true </builtinFunction> _ </obj>
+	syntax K ::= endCall(Vals)
+	rule L:LExp (Vs:Vals) => lvRef(L) ~> endCall(Vs)
+
+	rule <k> thisBinding( T:Oid, F:Oid) ~> endCall(Vs) => call(F,T,Vs) ...</k>
+				<obj> <oid> F </oid> <builtinFunction> false </builtinFunction> _ </obj>
+
+	rule <k> thisBinding( F:Oid, HOLE) ~> endCall(Vs) => call(F,T,Vs) ...</k>
+				<obj> <oid> F </oid> <builtinFunction> false </builtinFunction> _ </obj>
+				<thisBinding> T </thisBinding> 
+
+	rule <k> thisBinding( T:Oid, F:Oid) ~> endCall(Vs) => callBuiltinFunction(F,T,Vs) ...</k>
 				<obj> <oid> F </oid> <builtinFunction> true </builtinFunction> _ </obj>
+
+	/* this should not be able to happen
+ 	rule <k> thisBinding( F:Oid, HOLE) ~> endCall(Vs) => callBuiltinFunction(F,T,Vs) ...</k>
+				<obj> <oid> F </oid> <builtinFunction> true </builtinFunction> _ </obj>
+				<thisBinding> T </thisBinding> 
+*/
+			
 
   // 11.2.2 The new Operator
   // 13.2.2 [[Construct]]
@@ -1777,6 +2163,8 @@ module JS
 
   syntax K /* Ref */ ::= lv(LExp)
   rule <k> l(X,Y) ~> getValue(HOLE) => getValue(l(X,Y)) ... </k>
+
+	syntax K /* Ref */ ::= lvRef(K)
 
   syntax K /* Int */ ::= length(Params) [function]
                        | length(Vals) [function]
