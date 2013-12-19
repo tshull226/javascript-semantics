@@ -259,7 +259,9 @@ module JS
 															("fromCharCode" |-> vd(stringProtoOid, false,false, false)) 
 								 </properties> 
                  <prototype> functionProtoOid </prototype>
-                 <class> "String" </class>  //not sure, maybe Function?
+                 <class> "Function" </class>  //not sure, maybe Function?
+								 <codeNew> "newString" </codeNew>
+								 <code> "toString" </code>
                  <extensible> true </extensible>
                </obj>)
          (. => <obj>
@@ -446,7 +448,9 @@ module JS
                  <properties> ("length" |-> vd(1, false,false, false)) 
 															("prototype" |-> vd(booleanProtoOid, false,false, false)) </properties> 
                  <prototype> functionProtoOid </prototype>
-                 <class> "Boolean" </class>  //not sure, maybe Function?
+								 <codeNew> "newBool" </codeNew>
+								 <code> "toBoolean" </code>
+                 <class> "Function" </class>  
                  <extensible> true </extensible>
                </obj>)
          (. => <obj>
@@ -493,6 +497,8 @@ module JS
 															("POSITIVE_INFINITY" |-> vd(1, false,false, false))  //TODO: Make value correct
 								 </properties> 
                  <prototype> functionProtoOid </prototype>
+								 <codeNew> "newNumber" </codeNew>
+								 <code> "toNumber" </code>
                  <class> "Function" </class> //not sure, maybe Function
                  <extensible> true </extensible>
                </obj>)
@@ -1503,6 +1509,8 @@ module JS
 	rule determineBuiltinFunction("functionCall", This, A:Oid, Args:Vals) => functionCall(This, A, Args)
 	rule determineBuiltinFunction("functionBind", This, A:Oid, Args:Vals) => functionBind(This, A, Args)
 	//String
+	rule determineBuiltinFunction("toString", This, A:Val, Args) => toString(A)
+	rule determineBuiltinFunction("newString", This, A:Val, Args) => newString(A)
 	rule determineBuiltinFunction("stringToString", This, Args) => stringToString(This)
 	rule determineBuiltinFunction("stringValueOf", This, Args) => stringValueOf(This)
 	rule determineBuiltinFunction("stringCharAt", This, A:Val, Args) => stringCharAt(This, A)
@@ -1524,9 +1532,13 @@ module JS
 	rule determineBuiltinFunction("stringToLocaleUpperCase", This, Args) => stringToLocaleUpperCase(This)
 	rule determineBuiltinFunction("stringTrim", This, Args) => stringTrim(This)
 	//Boolean
+	rule determineBuiltinFunction("toBoolean", This, A:Val, Args) => toBoolean(A)
+	rule determineBuiltinFunction("newBool", This, A:Val, Args) => newBool(A)
 	rule determineBuiltinFunction("booleanToString", This, Args) => booleanToString(This)
 	rule determineBuiltinFunction("booleanValueOf", This, Args) => booleanValueOf(This)
 	//Number
+	rule determineBuiltinFunction("toNumber", This, A:Val, Args) => toNumber(A)
+	rule determineBuiltinFunction("newNumber", This, A:Val, Args) => newNumber(A)
 	rule determineBuiltinFunction("numberToString", This, .Vals) => numberToString(This)
 	rule determineBuiltinFunction("numberToString", This, A:Val, Args) => numberToString(This,A)
 	rule determineBuiltinFunction("numberToLocaleString", This, .Vals) => numberToString(This)
