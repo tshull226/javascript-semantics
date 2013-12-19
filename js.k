@@ -1432,6 +1432,18 @@ module JS
          <running> _ => R </running>
        </ctx>
 
+  syntax K /* .K */ ::= "exitFunBodyNew"
+  rule <k> exitFunBodyNew => . ... </k>
+       <ctx>
+         <activeStack> (active(R) => .) ... </activeStack>
+         <running> _ => R </running>
+       </ctx>
+  rule <k> (V:Val ~> exitFunBodyNew => .) ... </k>
+       <ctx>
+         <activeStack> (active(R) => .) ... </activeStack>
+         <running> _ => R </running>
+       </ctx>
+
   //////////////////////////////////////////////////////////////////////////////
   // 10.5 Declaration Binding Instantiation
   //////////////////////////////////////////////////////////////////////////////
@@ -1613,7 +1625,7 @@ module JS
 
   syntax K /* Val */ ::= callNew(Oid,Oid,Vals)
   rule <k> callNew(F:Oid,This:Oid,Args:Vals)
-        => enterFunBody(F,This,Args) ~> execute(Code) ~> exitFunBody ~> This ... </k>
+        => enterFunBody(F,This,Args) ~> execute(Code) ~> exitFunBodyNew ~> This ... </k>
        <obj>
          <oid> F </oid>
          <code> Code:FunBody </code>
