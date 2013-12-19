@@ -1612,7 +1612,7 @@ module JS
        </obj>
 
   syntax K /* Val */ ::= callNew(Oid,Oid,Vals)
-  rule <k> call(F:Oid,This:Oid,Args:Vals)
+  rule <k> callNew(F:Oid,This:Oid,Args:Vals)
         => enterFunBody(F,This,Args) ~> execute(Code) ~> exitFunBody ~> This ... </k>
        <obj>
          <oid> F </oid>
