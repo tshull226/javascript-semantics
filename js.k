@@ -1004,7 +1004,7 @@ module JS
   syntax K /* .K */ ::= endDefineOwnPropertyToArguments(Oid, Oid, PName, Val, Bool)
   // TODO: Update as defineOwnProperty is changed to return a boolean value.
   rule <k> defineOwnProperty(O:Oid, P:PName, V:Val, Throw:Bool)
-        => getOwnProperty(O, P) ~> endDefineOwnProperty(O, P, V, Throw) ~> getOwnProperty(M, P) ~> endDefineOwnPropertyToArguments(O, M, P, V, Throw) ...</k>
+        => getOwnProperty(O, P) ~> endDefineOwnProperty(O, P, V, Throw) ~> true? ~> getOwnProperty(M, P) ~> endDefineOwnPropertyToArguments(O, M, P, V, Throw) ...</k>
        <obj>
          <oid> O </oid>
          <class> "Arguments" </class>
@@ -1012,16 +1012,17 @@ module JS
          _
        </obj>
        when M =/=K .K
-  rule <k> undefined ~> endDefineOwnPropertyToArguments(_, _, _, _, _) => . ...</k>
+  // TODO: Review the return values.
+  rule <k> undefined ~> endDefineOwnPropertyToArguments(_, _, _, _, _) => true ...</k>
   rule <k> V:Val ~> endDefineOwnPropertyToArguments(_, M, P, va(_, _, _, _), _)
-        => delete(M, P) ...</k>
+        => delete(M, P) ~> true ...</k>
        when V =/=K undefined
   rule <k> V:Val ~> endDefineOwnPropertyToArguments(_, M, P, vd(V', true, _, _), _)
-        => put(M, P, V') ...</k>
+        => put(M, P, V') ~> true ...</k>
        when V =/=K undefined
   // TODO: Need review.
   rule <k> V:Val ~> endDefineOwnPropertyToArguments(_, M, P, vd(V', false, _, _), _)
-        => put(M, P, V') ~> delete(M, P) ...</k>
+        => put(M, P, V') ~> delete(M, P) ~> true ...</k>
        when V =/=K undefined
 
   //////////////////////////////////////////////////////////////////////////////
@@ -1406,7 +1407,8 @@ module JS
          _
        </obj>
   rule <k> E:Eid ~> endEnterFunBody(F:Oid,This:Oid,Args:Vals)
-        => declFunParams(F,Args) ~> declFuns(Code) ~> declVars(Code) /* ~> declArgumentsObj(F, Args) */ ... </k>
+        //=> declFunParams(F,Args) ~> declFuns(Code) ~> declVars(Code) ... </k>
+        => declFunParams(F,Args) ~> declFuns(Code) ~> declVars(Code) ~> declArgumentsObj(F, Args) ... </k>
        <obj>
          <oid> F </oid>
          <code> Code:FunBody </code>
