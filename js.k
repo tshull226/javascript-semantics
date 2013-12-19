@@ -1421,7 +1421,12 @@ module JS
        </ctx>
   //
   syntax K /* .K */ ::= "exitFunBody"
-  rule <k> exitFunBody => . ... </k>
+  rule <k> exitFunBody => undefined ... </k>
+       <ctx>
+         <activeStack> (active(R) => .) ... </activeStack>
+         <running> _ => R </running>
+       </ctx>
+  rule <k> V:Val ~> exitFunBody => V ... </k>
        <ctx>
          <activeStack> (active(R) => .) ... </activeStack>
          <running> _ => R </running>
@@ -1598,7 +1603,17 @@ module JS
   //TODO: Have to consider Bindings (see 15.3.4.5.1)
   syntax K /* Val */ ::= call(Oid,Oid,Vals)
   rule <k> call(F:Oid,This:Oid,Args:Vals)
-        => enterFunBody(F,This,Args) ~> execute(Code) ~> exitFunBody ~> undefined ... </k>
+        => enterFunBody(F,This,Args) ~> execute(Code) ~> exitFunBody ... </k>
+       <obj>
+         <oid> F </oid>
+         <code> Code:FunBody </code>
+				 <builtinFunction> false </builtinFunction> //not strictly necessary I hope
+         _
+       </obj>
+
+  syntax K /* Val */ ::= callNew(Oid,Oid,Vals)
+  rule <k> call(F:Oid,This:Oid,Args:Vals)
+        => enterFunBody(F,This,Args) ~> execute(Code) ~> exitFunBody ~> This ... </k>
        <obj>
          <oid> F </oid>
          <code> Code:FunBody </code>
@@ -2191,7 +2206,7 @@ module JS
 
   // 11.2.2 The new Operator
   // 13.2.2 [[Construct]]
-  rule <k> new F:Oid (Vs:Vals) => call(F,o(N),Vs) ... </k>
+  rule <k> new F:Oid (Vs:Vals) => callNew(F,o(N),Vs) ... </k>
        <objs>
          <oids> (. => SetItem(o(N))) ... </oids>
          (. => <obj>
@@ -2225,6 +2240,7 @@ module JS
 
   // 12.9 The return Statement
   rule return; => return undefined; [macro]
+	rule <k> return V:Val; ~> SE:SourceElements  => V ...</k>
 
   // 14 Program
   // TODO: Consider continue, break, etc. See 8.9 The Completion Specification Type
