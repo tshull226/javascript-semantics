@@ -1622,7 +1622,7 @@ module JS
        when fresh(N:Int)
   rule <k> O':Oid ~> endCreateFunObj(O:Oid,Params:Params,FunBody:FunBody)
         => defineOwnProperty(O, "length", vd(length(Params),false,false,false), false) ~> true? ~>
-           defineOwnProperty(O, "prototype", vd(O',true,false,false), false) ~> true? ~>
+           defineOwnProperty(O, "prototype", vd(O',true,false,true), false) ~> true? ~>
            defineOwnProperty(O', "constructor", vd(O,true,false,true), false) ~> true? ~>
            O ... </k>
 
@@ -2252,7 +2252,8 @@ module JS
                </obj>)
          <obj>
            <oid> F::Oid </oid>
-           <properties> ... "prototype" |-> vd(Prototype:Oid,true,false,false) ... </properties>
+           //<properties> ... "prototype" |-> vd(Prototype:Oid,true,false,false) ... </properties>
+           <properties> ... "prototype" |-> vd(Prototype:Oid,_,_,_) ... </properties>
 					 <builtinFunction> false </builtinFunction>
            _
          </obj>
