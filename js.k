@@ -138,6 +138,7 @@ module JS
                  <prototype> nullOid </prototype>
                  <class> "Object" </class>
                  <extensible> true </extensible>
+								 <builtinFunction> true </builtinFunction>
                </obj>)
          (. => <obj>
                  <oid> objectProtoOid </oid>
@@ -145,6 +146,7 @@ module JS
                  <prototype> nullOid </prototype>
                  <class> "Object" </class>
                  <extensible> true </extensible>
+								 <builtinFunction> true </builtinFunction>
                </obj>)
          (. => <obj>
                  <oid> throwTypeErrorOid </oid>
@@ -155,6 +157,8 @@ module JS
 								 <scope> globalEid </scope>
 								 <formalParameters> .K </formalParameters>
 								 <code> .K </code> //TODO: need code ot throw object 13.2.3
+                 <extensible> true </extensible>
+								 <builtinFunction> true </builtinFunction>
                </obj>)
          (. => <obj>
                  <oid> functionProtoOid </oid>
@@ -169,6 +173,7 @@ module JS
                  <prototype> objectProtoOid </prototype>
                  <class> "Function" </class>
                  <extensible> true </extensible>
+								 <builtinFunction> true </builtinFunction>
                </obj>)
          (. => <obj>
                  <oid> functionConstrOid </oid>
@@ -181,6 +186,7 @@ module JS
                  <extensible> true </extensible>
 								 <code> "newFunction" </code>
 								 <codeNew> "newFunction" </codeNew>
+								 <builtinFunction> true </builtinFunction>
                </obj>)
          (. => <obj>
                  <oid> functionToStringOid </oid>
@@ -251,6 +257,7 @@ module JS
                  <class> "String" </class>
                  <extensible> true </extensible>
 								 <primitiveValue> false </primitiveValue>
+								 <builtinFunction> true </builtinFunction>
                </obj>)
          (. => <obj>
                  <oid> stringConstrOid </oid>
@@ -263,6 +270,7 @@ module JS
 								 <codeNew> "newString" </codeNew>
 								 <code> "toString" </code>
                  <extensible> true </extensible>
+								 <builtinFunction> true </builtinFunction>
                </obj>)
          (. => <obj>
                  <oid> stringToStringOid </oid>
@@ -271,6 +279,7 @@ module JS
 								 <builtinFunction> true </builtinFunction>
                  <extensible> false </extensible>
 								 <code> "stringToString" </code>
+								 <builtinFunction> true </builtinFunction>
                </obj>)
          (. => <obj>
                  <oid> stringValueOfOid </oid>
@@ -442,6 +451,7 @@ module JS
                  <class> "Boolean" </class>
                  <extensible> true </extensible>
 								 <primitiveValue> false </primitiveValue>
+								 <builtinFunction> true </builtinFunction>
                </obj>)
          (. => <obj>
                  <oid> booleanConstrOid </oid>
@@ -452,6 +462,7 @@ module JS
 								 <code> "toBoolean" </code>
                  <class> "Function" </class>  
                  <extensible> true </extensible>
+								 <builtinFunction> true </builtinFunction>
                </obj>)
          (. => <obj>
                  <oid> booleanToStringOid </oid>
@@ -484,6 +495,7 @@ module JS
                  <class> "Number" </class>
                  <extensible> true </extensible>
 								 <primitiveValue> 0 </primitiveValue>
+								 <builtinFunction> true </builtinFunction>
                </obj>)
          (. => <obj>
                  <oid> numberConstrOid </oid>
@@ -501,6 +513,7 @@ module JS
 								 <code> "toNumber" </code>
                  <class> "Function" </class> //not sure, maybe Function
                  <extensible> true </extensible>
+								 <builtinFunction> true </builtinFunction>
                </obj>)
          (. => <obj>
                  <oid> numberToStringOid </oid>
@@ -1512,6 +1525,7 @@ module JS
                  <class> "Arguments" </class>
                  <extensible> true </extensible>
                  <parameterMap> .K </parameterMap>
+								 <builtinFunction> false </builtinFunction>
                </obj>)
          <obj>
            <oid> F </oid>
@@ -1729,6 +1743,7 @@ module JS
                  <oid> o(N) </oid>
                  <properties> .Map </properties>
                  <prototype> objectProtoOid </prototype> // Object prototype object 15.2.4
+								 <builtinFunction> false </builtinFunction>
                  <class> "Object" </class>
                  <extensible> true </extensible>
                </obj>)
@@ -1745,6 +1760,7 @@ module JS
                  <oid> o(N) </oid>
                  //<properties> </properties>
                  <prototype> functionProtoOid</prototype> // Object prototype object 15.2.4
+								 <builtinFunction> false </builtinFunction>
                  <class> "Function" </class>
                  <extensible> true </extensible>
                </obj>)
@@ -1794,6 +1810,7 @@ module JS
                  <oid> o(N) </oid>
                  <properties> .Map </properties>
                  <prototype> stringProtoOid</prototype> // Object prototype object 15.2.4
+								 <builtinFunction> false </builtinFunction>
                  <class> "String" </class>
                  <extensible> true </extensible>
 								 <primitiveValue> V </primitiveValue>
@@ -1939,6 +1956,7 @@ module JS
                  <oid> o(N) </oid>
                  <properties> .Map </properties>
                  <prototype> booleanProtoOid</prototype> // Object prototype object 15.2.4
+								 <builtinFunction> false </builtinFunction>
                  <class> "Boolean" </class>
                  <extensible> true </extensible>
 								 <primitiveValue> V </primitiveValue>
@@ -1997,6 +2015,7 @@ module JS
                  <properties> .Map </properties>
                  <prototype> numberProtoOid</prototype> // Object prototype object 15.2.4
                  <class> "Number" </class>
+								 <builtinFunction> false </builtinFunction>
                  <extensible> true </extensible>
 								 <primitiveValue> V </primitiveValue>
                </obj>)
@@ -2229,6 +2248,7 @@ module JS
                  <prototype> Prototype </prototype>
                  <class> "Object" </class>
                  <extensible> true </extensible>
+								 <builtinFunction> false </builtinFunction>
                </obj>)
          <obj>
            <oid> F::Oid </oid>
