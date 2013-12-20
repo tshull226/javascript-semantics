@@ -2277,6 +2277,12 @@ module JS
   rule return; => return undefined; [macro]
 	rule <k> return V:Val; ~> SE:SourceElements  => V ...</k>
 
+  rule if (true ) S else _ => S
+  rule if (false) _ else S => S
+  rule { S:Stmts } => S
+  rule S:Stmt Ss:Stmts => S ~> Ss
+  rule .Stmts => .
+
   // 14 Program
   // TODO: Consider continue, break, etc. See 8.9 The Completion Specification Type
   rule <k> S:SourceElement Ss:SourceElements => S ~> Ss ... </k>
