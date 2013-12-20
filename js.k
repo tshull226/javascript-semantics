@@ -78,7 +78,7 @@ module JS
   syntax Oid ::= o(Int)
                | "nullOid"
                | "globalOid"
-               | "objectProtoOid"
+               | "objectProtoOid" | "objectConstrOid"
                | "functionProtoOid" | "functionConstrOid" | "functionToStringOid" | "functionApplyOid" 
 							 | "functionCallOid" | "functionBindOid"
                | "stringProtoOid" | "stringConstrOid" | "stringToStringOid" | "stringValueOfOid" | "stringCharAtOid" 
@@ -134,8 +134,9 @@ module JS
 															"Function" |-> vd(functionConstrOid,false,false,false)
 															"Number" |-> vd(numberConstrOid,false,false,false)
 															"String" |-> vd(stringConstrOid,false,false,false)
+															"Object" |-> vd(objectConstrOid,false,false,false)
 								 </properties> // TODO: It should be: String2Name("window") |-> globalOid (think this comment is dated?)
-                 <prototype> nullOid </prototype>
+                 <prototype> objectProtoOid </prototype>
                  <class> "Object" </class>
                  <extensible> true </extensible>
 								 <builtinFunction> true </builtinFunction>
@@ -143,6 +144,16 @@ module JS
          (. => <obj>
                  <oid> objectProtoOid </oid>
                  <properties> .Map  </properties>
+                 <prototype> nullOid </prototype>
+                 <class> "Object" </class>
+                 <extensible> true </extensible>
+								 <builtinFunction> true </builtinFunction>
+               </obj>)
+         (. => <obj>
+                 <oid> objectConstrOid </oid>
+                 <properties> 
+															"prototype" |-> vd(objectProtoOid,false,false,false) 
+								 </properties>
                  <prototype> nullOid </prototype>
                  <class> "Object" </class>
                  <extensible> true </extensible>
@@ -862,13 +873,15 @@ module JS
   rule <k> ( V:Val => k(isCallable(V))
            ) ~> ks(get(_,_) ~> defaultValueString(_)) ... </k>
   rule <k> true ~> ks(isCallable(F:Oid) ~> get(_,_) ~> defaultValueString(O:Oid))
-        => k(call(F,O,.Vals)) ... </k>
+        => call(F,O,.Vals) ... </k>
+        //=> k(call(F,O,.Vals)) ... </k>
   rule <k> ( false => k(get(O,"valueOf"))
            ) ~> ks(isCallable(_) ~> get(_,_) ~> defaultValueString(O:Oid)) ... </k>
   rule <k> ( V:Val => k(isCallable(V))
            ) ~> ks(get(_,_) ~> isCallable(_) ~> get(_,_) ~> defaultValueString(_)) ... </k>
   rule <k> true ~> ks(isCallable(F:Oid) ~> get(_,_) ~> isCallable(_) ~> get(_,_) ~> defaultValueString(O:Oid))
-        => k(call(F,O,.Vals)) ... </k>
+        => call(F,O,.Vals) ... </k>
+        //=> k(call(F,O,.Vals)) ... </k>
   rule <k> false ~> ks(isCallable(_) ~> get(_,_) ~> isCallable(_) ~> get(_,_) ~> defaultValueString(_))
         => throwTypeError ... </k>
   //
@@ -878,13 +891,15 @@ module JS
   rule <k> ( V:Val => k(isCallable(V))
            ) ~> ks(get(_,_) ~> defaultValueNumber(_)) ... </k>
   rule <k> true ~> ks(isCallable(F:Oid) ~> get(_,_) ~> defaultValueNumber(O:Oid))
-        => k(call(F,O,.Vals)) ... </k>
+        => call(F,O,.Vals) ... </k>
+        //=> k(call(F,O,.Vals)) ... </k>
   rule <k> ( false => k(get(O,"toString"))
            ) ~> ks(isCallable(_) ~> get(_,_) ~> defaultValueNumber(O:Oid)) ... </k>
   rule <k> ( V:Val => k(isCallable(V))
            ) ~> ks(get(_,_) ~> isCallable(_) ~> get(_,_) ~> defaultValueNumber(_)) ... </k>
   rule <k> true ~> ks(isCallable(F:Oid) ~> get(_,_) ~> isCallable(_) ~> get(_,_) ~> defaultValueNumber(O:Oid))
-        => k(call(F,O,.Vals)) ... </k>
+        => call(F,O,.Vals) ... </k>
+        //=> k(call(F,O,.Vals)) ... </k>
   rule <k> false ~> ks(isCallable(_) ~> get(_,_) ~> isCallable(_) ~> get(_,_) ~> defaultValueNumber(_))
         => throwTypeError ... </k>
 
@@ -1159,7 +1174,12 @@ module JS
   syntax K /* Bool */ ::= isCallable(Val)
 
 	rule isCallable(No:NonObject) => false
-  // TODO: object case
+  // TODO: make object case completely correct
+  rule <k> isCallable(O:Oid) => true ...</k>
+		<obj> <oid> O </oid> <class> "Function" </class>  _ </obj>
+
+  rule <k> isCallable(O:Oid) => false ...</k>
+		<obj> <oid> O </oid> <class> F </class>  _ </obj> when F =/=K "Function"
 
   // 9.12 The SameValue Algorithm
   syntax K /* Bool */ ::= sameValue(Val,Val)
@@ -2275,10 +2295,18 @@ module JS
 
   // 12.9 The return Statement
   rule return; => return undefined; [macro]
-	rule <k> return V:Val; ~> SE:SourceElements  => V ...</k>
+	rule <k> ((return V:Val; ~> E:SourceElement) => return V;) ~> _ </k> 
+	rule <k> ((return V:Val; ~> .SourceElements) => return V;) ~> _ </k> 
+	rule <k> (return V:Val; => V) ~> exitFunBody ...</k>
+	rule <k> (return V:Val; => V) ~> exitFunBodyNew ...</k>
 
-  rule if (true ) S else _ => S
-  rule if (false) _ else S => S
+  /*rule if (true ) S else _ => S
+  rule if (false) _ else S => S*/
+	rule if(V:Val) S else S' => toBoolean(V) ~> determineIf(S,S')
+	syntax K ::= determineIf(K,K)
+	rule true ~> determineIf(S,_) => S
+	rule false ~> determineIf(_,S) => S
+
   rule { S:Stmts } => S
   rule S:Stmt Ss:Stmts => S ~> Ss
   rule .Stmts => .
@@ -2330,7 +2358,13 @@ module JS
   rule I1:Int / I2:Int => I1 /Int I2 when I2 =/=K 0
   rule I1:Int % I2:Int => I1 %Int I2 when I2 =/=K 0
   rule I1:Int + I2:Int => I1 +Int I2
-  rule S1:String + S2:String => S1 +String S2
+  //rule S1:String + S2:String => S1 +String S2
+  syntax K ::= stringHelper1(String) | stringHelper2(String)
+  rule S1:String + S2:Val => toString(S2) ~> stringHelper1(S1)
+  rule S1:Val + S2:String => toString(S1) ~> stringHelper2(S2)
+	rule S:String ~> stringHelper1(S') => S' +String S
+	rule S:String ~> stringHelper2(S') => S +String S'
+
   rule I1:Int - I2:Int => I1 -Int I2
   rule I1:Int < I2:Int => I1 <Int I2
   rule I1:Int > I2:Int => I1 >Int I2
