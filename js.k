@@ -86,6 +86,7 @@ module JS
 							 | "stringLocaleCompareOid" | "stringMatchOid" | "stringReplaceOid" | "stringSearchOid" |"stringSliceOid"
 							 | "stringSplitOid" | "stringSubstringOid" | "stringToLowerCaseOid" | "stringToLocaleLowerCaseOid"
 							 | "stringToUpperCaseOid" | "stringToLocaleUpperCaseOid" | "stringTrimOid"
+               | "arrayProtoOid" | "arrayConstrOid" |"arrayConcatOid" | "arraySpliceOid"
                | "booleanProtoOid" | "booleanConstrOid" | "booleanToStringOid" | "booleanValueOfOid"
                | "numberProtoOid" | "numberConstrOid" | "numberToStringOid" | "numberToLocaleStringOid" | "numberValueOfOid"
 							 | "numberToFixedOid" | "numberToExponentialOid" | "numberToPrecisionOid"
@@ -490,6 +491,30 @@ module JS
 								 <builtinFunction> true </builtinFunction>
                  <extensible> false </extensible>
 								 <code> "booleanValueOf" </code>
+               </obj>)
+         (. => <obj>
+                 <oid> arrayProtoOid </oid>
+                 <properties> 
+															"constructor" |-> vd(arrayConstrOid, false, false, false)  
+															"concat" |-> vd(arrayConcatOid, false, false, false)  
+															"splice" |-> vd(arraySpliceOid, false, false, false) 
+								 </properties>
+                 <prototype> objectProtoOid </prototype>
+                 <class> "Array" </class>
+                 <extensible> true </extensible>
+								 <primitiveValue> false </primitiveValue>
+								 <builtinFunction> true </builtinFunction>
+               </obj>)
+         (. => <obj>
+                 <oid> arrayConstrOid </oid>
+                 <properties> ("length" |-> vd(1, false,false, false)) 
+															("prototype" |-> vd(arrayProtoOid, false,false, false)) </properties> 
+                 <prototype> functionProtoOid </prototype>
+								 <codeNew> "newArray" </codeNew>
+								 //<code> "toBoolean" </code>
+                 <class> "Function" </class>  
+                 <extensible> true </extensible>
+								 <builtinFunction> true </builtinFunction>
                </obj>)
          (. => <obj>
                  <oid> numberProtoOid </oid>
@@ -1735,6 +1760,11 @@ module JS
 	rule determineBuiltinFunction("newBool", This, A:Val, Args) => newBool(A)
 	rule determineBuiltinFunction("booleanToString", This, Args) => booleanToString(This)
 	rule determineBuiltinFunction("booleanValueOf", This, Args) => booleanValueOf(This)
+	//Array
+/*
+	rule determineBuiltinFunction("arrayConcat", This, Args) => arrayConcat(This,Args)
+	rule determineBuiltinFunction("arraySplice", This, Args) => arraySplice(This,Args)
+*/
 	//Number
 	rule determineBuiltinFunction("toNumber", This, A:Val, Args) => toNumber(A)
 	rule determineBuiltinFunction("newNumber", This, A:Val, Args) => newNumber(A)
@@ -2022,7 +2052,28 @@ module JS
 		rule booleanValueOf(nullVal) => throwTypeErrorOid
 		rule booleanValueOf(Number) => throwTypeErrorOid
 		rule booleanValueOf(String) => throwTypeErrorOid 
+
+	//15.4 Array Objects
+	//
+	/*
+	syntax K ::= arrayConcat(Oid,Vals) | arrayConcatList(Vals) | arrayAdd(Oid,String) | arrayEnd(Oid,String)
+					| arrayExtractElements(K,K,K,K,K) [strict]
+	rule arrayConcat(O,Args) => newArray ~> arrayExtractElements(HOLE,O,0,HOLE) ~> arrayConcatList(Args)
+	rule O:Oid ~> arrayExtractElements(HOLE,O',I,I',HOLE) => get(O',"length") ~> arrayExtractElements(O,O',I,I',HOLE)
+	rule L:Int ~> arrayExtractElements(O,O',I,I',HOLE) =>arrayExtractElements(O,O',I,I',L) 
+	rule <k> arrayExtractElements(O,O',I:Int,I':Int,L:Int) => get(O',ArrayIndex(I') ~> arrayAdd(O,ArrayIndex(I)) ~> arrayExtractElement(O,O',I +Int 1, I' +Int 1,L) ...</k> when I' <Int L
+	rule <k> arrayExtractElements(O,O',I:Int,I':Int,L:Int) => arrayEnd(O,I) ...</k> when I' >= L
+	rule V:Val ~> arrayAdd(O,I) => put(O,I,V)
+
+	syntax String ::= ArrayIndex(Int) [function]
+	rule ArrayIndex(I) => Int2String(I)
 	
+
+
+	syntax K ::= arraySplice(Oid,Vals)  
+*/	
+
+
   // 15.7 Number Objects
   syntax K /* Oid */ ::= newNumber(Val) | "newNumber()"
 
